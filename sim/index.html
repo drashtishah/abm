@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABM Simulator</title>
+  <style>
+    :root {
+      --bg-primary: #0a0e27;
+      --bg-surface: #1a1f3a;
+      --border: #2d3561;
+      --accent-primary: #66ff55;
+      --accent-secondary: #00ffe5;
+      --accent-tertiary: #9b80f2;
+      --text-primary: #affff7;
+      --text-secondary: #7da4bc;
+      --color-wolf: #ff2daa;
+      --color-sheep: #affff7;
+      --color-grass: #2a5a20;
+      --color-grass-eaten: #1a1200;
+      --color-danger: #ff1744;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr 200px;
+      grid-template-columns: 280px 1fr;
+      grid-template-areas:
+        "header header"
+        "controls canvas"
+        "chart chart";
+      height: 100vh;
+    }
+
+    .header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 {
+      font-size: 16px;
+      color: var(--accent-primary);
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-right select {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .tick-display {
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .controls {
+      grid-area: controls;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .model-context {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 14px;
+      background: transparent;
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+      cursor: pointer;
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+
+    button:hover {
+      box-shadow: 0 0 8px #66ff5580;
+    }
+
+    button.active {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 4px var(--accent-primary); }
+      50% { box-shadow: 0 0 16px var(--accent-primary); }
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .slider-row label {
+      color: var(--text-primary);
+      font-size: 11px;
+    }
+
+    .slider-row input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent-primary);
+    }
+
+    .slider-value {
+      color: var(--text-secondary);
+      font-size: 11px;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--accent-primary);
+    }
+
+    .population-counts {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 12px;
+    }
+
+    .pop-wolf { color: var(--color-wolf); }
+    .pop-sheep { color: var(--color-sheep); }
+    .pop-grass { color: var(--accent-primary); }
+
+    .canvas-area {
+      grid-area: canvas;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    #sim-canvas {
+      background: var(--bg-primary);
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    .chart-area {
+      grid-area: chart;
+      border-top: 1px solid var(--border);
+      padding: 0;
+    }
+
+    #chart-canvas {
+      width: 100%;
+      height: 100%;
+    }
+
+    .attribution {
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .attribution a {
+      color: var(--accent-secondary);
+      text-decoration: none;
+    }
+
+    .attribution a:hover {
+      text-decoration: underline;
+    }
+
+    #agent-inspector {
+      display: none;
+      position: fixed;
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-secondary);
+      padding: 10px;
+      font-size: 11px;
+      z-index: 100;
+      box-shadow: 0 0 12px rgba(0, 255, 229, 0.3);
+      max-width: 200px;
+    }
+
+    #agent-inspector .close {
+      position: absolute;
+      top: 2px;
+      right: 6px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      body { overflow: auto; height: auto; }
+
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto 200px;
+        grid-template-areas:
+          "header"
+          "controls"
+          "canvas"
+          "chart"
+          "chart";
+        height: auto;
+      }
+
+      .controls { border-right: none; border-bottom: 1px solid var(--border); }
+
+      .canvas-area { padding: 0; }
+
+      #sim-canvas {
+        width: 100%;
+        aspect-ratio: 4/3;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>ABM Simulator</h1>
+      <div class="header-right">
+        <span class="tick-display" id="tick-display">Tick: 0</span>
+        <select id="model-select"></select>
+      </div>
+    </header>
+
+    <aside class="controls">
+      <div class="model-context" id="model-context"></div>
+
+      <div class="button-group">
+        <button id="btn-setup">Setup</button>
+        <button id="btn-go">Go</button>
+        <button id="btn-step">Step</button>
+        <button id="btn-reset">Reset</button>
+      </div>
+
+      <div class="section-label">Speed</div>
+      <div class="slider-row">
+        <label for="speed-slider">Update Rate</label>
+        <input type="range" id="speed-slider" min="1" max="20" step="1" value="1" />
+        <span class="slider-value" id="speed-value">1</span>
+      </div>
+
+      <div class="section-label">Parameters</div>
+      <div id="slider-container"></div>
+
+      <div class="section-label">Population</div>
+      <div class="population-counts" id="pop-counts">
+        <span class="pop-wolf" id="pop-wolves">Wolves: 0</span>
+        <span class="pop-sheep" id="pop-sheep">Sheep: 0</span>
+        <span class="pop-grass" id="pop-grass">Grass: 0</span>
+      </div>
+
+      <button id="btn-download">Download CSV</button>
+
+      <div class="attribution" id="attribution"></div>
+    </aside>
+
+    <div class="canvas-area">
+      <canvas id="sim-canvas" width="800" height="600"></canvas>
+    </div>
+
+    <div class="chart-area">
+      <canvas id="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <div id="agent-inspector">
+    <span class="close" id="inspector-close">&times;</span>
+    <div id="inspector-content"></div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

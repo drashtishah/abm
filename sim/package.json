@@ -1,0 +1,33 @@
+{
+  "name": "abm-simulator",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:engine": "vitest run src/models/",
+    "test:ui": "vitest run src/framework/",
+    "test:e2e": "playwright test",
+    "lint": "eslint src/ --max-warnings 0",
+    "run:headless": "tsx src/cli/run.ts",
+    "run:batch": "tsx src/cli/run.ts --batch"
+  },
+  "dependencies": {
+    "typescript": "^5.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9.0.0",
+    "jsdom": "^25.0.0",
+    "tsx": "^4.0.0",
+    "typescript-eslint": "^8.0.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0"
+  }
+}

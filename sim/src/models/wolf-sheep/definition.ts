@@ -60,6 +60,14 @@ Sheep boom → wolves thrive → sheep crash → wolves starve → repeat.`,
     { type: 'sheep', color: '#affff7', radius: 5, shape: 'circle' },
   ],
   toggles: [],
+  expectedPattern: {
+    type: 'oscillation',
+    description: 'Lotka-Volterra predator-prey cycles',
+    minTicks: 500,
+    populations: ['wolf', 'sheep'],
+    minCycles: 3,
+    maxExtinctionRate: 0.1,
+  },
   createWorld: (config: Record<string, number>) => new WolfSheepWorld(config),
 };
 

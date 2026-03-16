@@ -18,6 +18,14 @@ export const templateDef: ModelDefinition = {
   agentTypes: [
     { type: 'agent', color: '#66ff55', radius: 4, shape: 'circle' },
   ],
+  // expectedPattern: {
+  //   type: 'oscillation',  // oscillation | segregation | epidemic-curve | equilibrium
+  //   description: 'Description of expected emergent behavior',
+  //   minTicks: 500,
+  //   populations: ['agent'],  // keys from getPopulationCounts()
+  //   minCycles: 3,
+  //   maxExtinctionRate: 0.1,
+  // },
   createWorld: (config: Record<string, number>) => new TemplateWorld(config),
 };
 

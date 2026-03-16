@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { createWolf, createSheep, createGrassGrid, resetIdCounter } from './agent.js';
 import { wolfSheepDef } from './definition.js';
+import { mulberry32 } from '../../utils/prng.js';
 
 const config = { ...wolfSheepDef.defaultConfig };
 
@@ -10,7 +11,8 @@ describe('agent', () => {
   });
 
   it('createWolf returns valid wolf', () => {
-    const wolf = createWolf(config);
+    const random = mulberry32(42);
+    const wolf = createWolf(config, random);
     expect(wolf.type).toBe('wolf');
     expect(wolf.alive).toBe(true);
     expect(wolf.speed).toBeGreaterThan(0);
@@ -18,7 +20,8 @@ describe('agent', () => {
   });
 
   it('createSheep returns valid sheep', () => {
-    const sheep = createSheep(config);
+    const random = mulberry32(42);
+    const sheep = createSheep(config, random);
     expect(sheep.type).toBe('sheep');
     expect(sheep.alive).toBe(true);
     expect(sheep.energy).toBeGreaterThan(0);
@@ -27,14 +30,15 @@ describe('agent', () => {
   it('agents spawn within bounds', () => {
     const w = config['width']!;
     const h = config['height']!;
+    const random = mulberry32(42);
     for (let i = 0; i < 50; i++) {
-      const wolf = createWolf(config);
+      const wolf = createWolf(config, random);
       expect(wolf.x).toBeGreaterThanOrEqual(wolf.radius);
       expect(wolf.x).toBeLessThanOrEqual(w - wolf.radius);
       expect(wolf.y).toBeGreaterThanOrEqual(wolf.radius);
       expect(wolf.y).toBeLessThanOrEqual(h - wolf.radius);
 
-      const sheep = createSheep(config);
+      const sheep = createSheep(config, random);
       expect(sheep.x).toBeGreaterThanOrEqual(sheep.radius);
       expect(sheep.x).toBeLessThanOrEqual(w - sheep.radius);
       expect(sheep.y).toBeGreaterThanOrEqual(sheep.radius);
@@ -43,9 +47,10 @@ describe('agent', () => {
   });
 
   it('factory generates unique ids', () => {
+    const random = mulberry32(42);
     const ids = new Set<number>();
     for (let i = 0; i < 100; i++) {
-      const agent = i % 2 === 0 ? createWolf(config) : createSheep(config);
+      const agent = i % 2 === 0 ? createWolf(config, random) : createSheep(config, random);
       ids.add(agent.id);
     }
     expect(ids.size).toBe(100);

@@ -26,17 +26,15 @@ export class WolfSheepWorld extends BaseWorld {
   setup(): void {
     resetIdCounter();
     this.agents = [];
-    this.tick = 0;
-    this.populationHistory = [];
 
     const numWolves = this.config['initialWolves'] ?? 50;
     const numSheep = this.config['initialSheep'] ?? 100;
 
     for (let i = 0; i < numWolves; i++) {
-      this.agents.push(createWolf(this.config));
+      this.agents.push(createWolf(this.config, this.random.bind(this)));
     }
     for (let i = 0; i < numSheep; i++) {
-      this.agents.push(createSheep(this.config));
+      this.agents.push(createSheep(this.config, this.random.bind(this)));
     }
 
     this.nextId = this.agents.length;
@@ -50,7 +48,7 @@ export class WolfSheepWorld extends BaseWorld {
     const grass = this.extraState.grass;
     const width = this.config['width'] ?? 800;
     const height = this.config['height'] ?? 600;
-    const moveCost = this.config['moveCost'] ?? 1;
+    const moveCost = this.config['moveCost'] ?? 0.5;
     const wolfGainFromFood = this.config['wolfGainFromFood'] ?? 20;
     const sheepGainFromFood = this.config['sheepGainFromFood'] ?? 4;
     const catchRadius = this.config['catchRadius'] ?? 10;
@@ -60,9 +58,11 @@ export class WolfSheepWorld extends BaseWorld {
     const wolves = aliveAgents.filter(a => a.type === 'wolf');
     const sheep = aliveAgents.filter(a => a.type === 'sheep');
 
+    const rng = this.random.bind(this);
+
     // 1. Move all agents
     for (const wolf of wolves) {
-      const vel = chaseNearest(wolf, sheep, this.config);
+      const vel = chaseNearest(wolf, sheep, this.config, rng);
       wolf.vx = vel.vx;
       wolf.vy = vel.vy;
       wolf.x += wolf.vx;
@@ -72,7 +72,7 @@ export class WolfSheepWorld extends BaseWorld {
     }
 
     for (const s of sheep) {
-      const vel = fleeFromNearest(s, wolves, grass, this.config);
+      const vel = fleeFromNearest(s, wolves, grass, this.config, rng);
       s.vx = vel.vx;
       s.vy = vel.vy;
       s.x += s.vx;
@@ -124,7 +124,7 @@ export class WolfSheepWorld extends BaseWorld {
     const newAgents: Agent[] = [];
     for (const agent of this.agents) {
       if (!agent.alive) continue;
-      const offspring = tryReproduce(agent, this.config);
+      const offspring = tryReproduce(agent, this.config, rng);
       if (offspring) {
         offspring.id = this.nextId++;
         // Clamp offspring position
@@ -160,7 +160,10 @@ export class WolfSheepWorld extends BaseWorld {
       log({ level: 'warn', category: 'population', message: `Sheep population critical: ${aliveSheep}` }, this.tick);
     }
 
-    // 7. Record population
+    // 7. Compact dead agents
+    this.agents = this.agents.filter(a => a.alive);
+
+    // 8. Record population
     this.recordPopulation();
   }
 

@@ -13,15 +13,15 @@ export function resetIdCounter(): void {
   nextId = 0;
 }
 
-export function createWolf(config: Record<string, number>): Agent {
+export function createWolf(config: Record<string, number>, random: () => number): Agent {
   const w = config['width'] ?? 800;
   const h = config['height'] ?? 600;
   const radius = 4;
   return {
     id: nextId++,
     type: 'wolf',
-    x: radius + Math.random() * (w - 2 * radius),
-    y: radius + Math.random() * (h - 2 * radius),
+    x: radius + random() * (w - 2 * radius),
+    y: radius + random() * (h - 2 * radius),
     vx: 0,
     vy: 0,
     radius,
@@ -33,15 +33,15 @@ export function createWolf(config: Record<string, number>): Agent {
   };
 }
 
-export function createSheep(config: Record<string, number>): Agent {
+export function createSheep(config: Record<string, number>, random: () => number): Agent {
   const w = config['width'] ?? 800;
   const h = config['height'] ?? 600;
   const radius = 3;
   return {
     id: nextId++,
     type: 'sheep',
-    x: radius + Math.random() * (w - 2 * radius),
-    y: radius + Math.random() * (h - 2 * radius),
+    x: radius + random() * (w - 2 * radius),
+    y: radius + random() * (h - 2 * radius),
     vx: 0,
     vy: 0,
     radius,

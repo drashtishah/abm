@@ -26,6 +26,7 @@ export interface World extends WorldState {
   setup(): void;
   step(): void;
   reset(): void;
+  random(): number;
   updateConfig(partial: Record<string, number>): void;
   getPopulationCounts(): Record<string, number>;
 }

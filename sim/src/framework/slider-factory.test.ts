@@ -16,6 +16,7 @@ function makeWorld(): World {
     reset: vi.fn(),
     updateConfig: vi.fn(),
     getPopulationCounts: vi.fn(() => ({})),
+    random: vi.fn(() => 0.5),
   };
 }
 

@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { WolfSheepWorld } from './world.js';
 import { wolfSheepDef } from './definition.js';
 import type { GrassPatch } from './agent.js';
 
-const defaultConfig = { ...wolfSheepDef.defaultConfig };
+const defaultConfig: Record<string, number> = { ...wolfSheepDef.defaultConfig, seed: 42 };
 const width = defaultConfig['width']!;
 const height = defaultConfig['height']!;
 const gridSize = defaultConfig['grassGridSize']!;
@@ -82,9 +82,7 @@ describe('WolfSheepWorld', () => {
 
     const wolfEnergyBefore = wolf.energy;
 
-    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     world.step();
-    vi.restoreAllMocks();
 
     expect(sheep.alive).toBe(false);
     expect(wolf.energy).toBeGreaterThan(wolfEnergyBefore - moveCost);
@@ -105,9 +103,7 @@ describe('WolfSheepWorld', () => {
 
     const energyBefore = sheep.energy;
 
-    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     world.step();
-    vi.restoreAllMocks();
 
     expect(patch.alive).toBe(false);
     expect(sheep.energy).toBe(energyBefore - moveCost + sheepGainFromFood);
@@ -132,9 +128,7 @@ describe('WolfSheepWorld', () => {
 
     wolf.energy = moveCost;
 
-    vi.spyOn(Math, 'random').mockReturnValue(0.99);
     world.step();
-    vi.restoreAllMocks();
 
     expect(wolf.alive).toBe(false);
   });
@@ -169,5 +163,33 @@ describe('WolfSheepWorld', () => {
 
     const sheep = world.agents.filter(a => a.type === 'sheep');
     expect(sheep.length).toBe(50);
+  });
+
+  it('dead agents are compacted from agents array', () => {
+    const world = createWorld({ initialWolves: 1, initialSheep: 1 });
+    const wolf = world.agents.find(a => a.type === 'wolf')!;
+    const sheep = world.agents.find(a => a.type === 'sheep')!;
+
+    // Force wolf to eat sheep
+    wolf.x = 400;
+    wolf.y = 300;
+    sheep.x = 400;
+    sheep.y = 300;
+
+    world.step();
+
+    // After step, dead agents should be filtered out
+    const deadAgents = world.agents.filter(a => !a.alive);
+    expect(deadAgents.length).toBe(0);
+  });
+
+  it('seeded world produces deterministic agent positions', () => {
+    const world1 = createWorld({ seed: 123 });
+    const world2 = createWorld({ seed: 123 });
+
+    const positions1 = world1.agents.map(a => ({ x: a.x, y: a.y }));
+    const positions2 = world2.agents.map(a => ({ x: a.x, y: a.y }));
+
+    expect(positions1).toEqual(positions2);
   });
 });

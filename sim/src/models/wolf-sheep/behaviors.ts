@@ -6,7 +6,8 @@ export function fleeFromNearest(
   sheep: Agent,
   wolves: readonly Agent[],
   grass: readonly GrassPatch[],
-  config: Record<string, number>
+  config: Record<string, number>,
+  random: () => number
 ): { vx: number; vy: number } {
   const fleeRadius = config['fleeRadius'] ?? 40;
   const speed = sheep.speed;
@@ -59,14 +60,15 @@ export function fleeFromNearest(
   }
 
   // Random walk
-  const angle = Math.random() * Math.PI * 2;
+  const angle = random() * Math.PI * 2;
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
 
 export function chaseNearest(
   wolf: Agent,
   sheepList: readonly Agent[],
-  _config: Record<string, number>
+  _config: Record<string, number>,
+  random: () => number
 ): { vx: number; vy: number } {
   const speed = wolf.speed;
 
@@ -88,7 +90,7 @@ export function chaseNearest(
   }
 
   // Random walk if no sheep
-  const angle = Math.random() * Math.PI * 2;
+  const angle = random() * Math.PI * 2;
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
 
@@ -114,7 +116,8 @@ export function checkCatch(
 
 export function tryReproduce(
   agent: Agent,
-  config: Record<string, number>
+  config: Record<string, number>,
+  random: () => number
 ): Agent | null {
   const thresholdKey = agent.type === 'wolf' ? 'wolfReproduceThreshold' : 'sheepReproduceThreshold';
   const rateKey = agent.type === 'wolf' ? 'wolfReproduceRate' : 'sheepReproduceRate';
@@ -122,7 +125,7 @@ export function tryReproduce(
   const rate = config[rateKey] ?? 0.05;
 
   if (agent.energy < threshold) return null;
-  if (Math.random() > rate) return null;
+  if (random() > rate) return null;
 
   // Reproduce: halve parent energy, create offspring
   const childEnergy = agent.energy / 2;
@@ -131,8 +134,8 @@ export function tryReproduce(
   return {
     id: -1, // Will be assigned by world
     type: agent.type,
-    x: agent.x + (Math.random() - 0.5) * 10,
-    y: agent.y + (Math.random() - 0.5) * 10,
+    x: agent.x + (random() - 0.5) * 10,
+    y: agent.y + (random() - 0.5) * 10,
     vx: 0,
     vy: 0,
     radius: agent.radius,
@@ -144,6 +147,7 @@ export function tryReproduce(
   };
 }
 
+/** O(1) grass patch lookup using grid index arithmetic */
 export function findGrassPatchAt(
   x: number,
   y: number,
@@ -155,12 +159,9 @@ export function findGrassPatchAt(
   const height = config['height'] ?? 600;
   const cellW = width / gridSize;
   const cellH = height / gridSize;
-
   const gx = Math.floor(x / cellW);
   const gy = Math.floor(y / cellH);
-
-  for (const patch of grass) {
-    if (patch.x === gx && patch.y === gy) return patch;
-  }
-  return null;
+  if (gx < 0 || gx >= gridSize || gy < 0 || gy >= gridSize) return null;
+  const idx = gy * gridSize + gx;
+  return grass[idx] ?? null;
 }

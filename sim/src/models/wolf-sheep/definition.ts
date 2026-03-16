@@ -26,6 +26,7 @@ export const wolfSheepDef: ModelDefinition = {
     grassGridSize: 20,
     catchRadius: 8,
     fleeRadius: 50,
+    seed: 0,
   },
   configSchema: [
     { key: 'width', label: 'Width', min: 400, max: 1200, step: 100, default: 800 },
@@ -45,6 +46,7 @@ export const wolfSheepDef: ModelDefinition = {
     { key: 'grassGridSize', label: 'Grass Grid Size', min: 10, max: 40, step: 1, default: 20 },
     { key: 'catchRadius', label: 'Catch Radius', min: 5, max: 30, step: 1, default: 8 },
     { key: 'fleeRadius', label: 'Flee Radius', min: 10, max: 80, step: 1, default: 50 },
+    { key: 'seed', label: 'Random Seed', min: 0, max: 99999, step: 1, default: 0, info: 'Seed for reproducible runs. 0 = random each time.', tier: 'advanced' },
   ],
   agentTypes: [
     { type: 'wolf', color: '#ff2daa', radius: 4, shape: 'circle' },

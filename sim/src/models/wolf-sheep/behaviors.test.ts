@@ -1,18 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import type { Agent } from '../../framework/types.js';
 import type { GrassPatch } from './agent.js';
-import { resetIdCounter } from './agent.js';
+import { resetIdCounter, createGrassGrid } from './agent.js';
 import {
   fleeFromNearest,
   chaseNearest,
   bounceOffWalls,
   checkCatch,
   tryReproduce,
+  findGrassPatchAt,
 } from './behaviors.js';
 import { wolfSheepDef } from './definition.js';
 import { distance } from '../../utils/vec2.js';
 
 const config = { ...wolfSheepDef.defaultConfig };
+
+/** Deterministic random that always returns the same value */
+const fixedRandom = (value: number) => () => value;
 
 function makeAgent(overrides: Partial<Agent> = {}): Agent {
   return {
@@ -46,7 +50,7 @@ describe('behaviors', () => {
     const wolf = makeAgent({ type: 'wolf', x: 210, y: 200 });
     const distBefore = distance(sheep, wolf);
 
-    const vel = fleeFromNearest(sheep, [wolf], [], config);
+    const vel = fleeFromNearest(sheep, [wolf], [], config, fixedRandom(0.5));
     sheep.vx = vel.vx;
     sheep.vy = vel.vy;
     sheep.x += sheep.vx;
@@ -63,7 +67,7 @@ describe('behaviors', () => {
     // No wolves nearby (wolf far outside flee radius)
     const wolf = makeAgent({ type: 'wolf', x: 700, y: 500 });
 
-    const vel = fleeFromNearest(sheep, [wolf], [grassPatch], config);
+    const vel = fleeFromNearest(sheep, [wolf], [grassPatch], config, fixedRandom(0.5));
 
     // Grass cell center in world coords
     const cellW = config['width']! / config['grassGridSize']!;
@@ -84,7 +88,7 @@ describe('behaviors', () => {
     // All grass dead
     const deadGrass = [makeGrassPatch({ alive: false })];
     // No wolves nearby
-    const vel = fleeFromNearest(sheep, [], deadGrass, config);
+    const vel = fleeFromNearest(sheep, [], deadGrass, config, fixedRandom(0.5));
     const speed = Math.sqrt(vel.vx * vel.vx + vel.vy * vel.vy);
     expect(speed).toBeGreaterThan(0);
   });
@@ -94,7 +98,7 @@ describe('behaviors', () => {
     const sheep = makeAgent({ type: 'sheep', x: 250, y: 200 });
     const distBefore = distance(wolf, sheep);
 
-    const vel = chaseNearest(wolf, [sheep], config);
+    const vel = chaseNearest(wolf, [sheep], config, fixedRandom(0.5));
     wolf.vx = vel.vx;
     wolf.vy = vel.vy;
     wolf.x += wolf.vx;
@@ -106,7 +110,7 @@ describe('behaviors', () => {
 
   it('wolf with no sheep wanders', () => {
     const wolf = makeAgent({ type: 'wolf', x: 400, y: 300, speed: 2.0 });
-    const vel = chaseNearest(wolf, [], config);
+    const vel = chaseNearest(wolf, [], config, fixedRandom(0.5));
     expect(typeof vel.vx).toBe('number');
     expect(typeof vel.vy).toBe('number');
     expect(Number.isFinite(vel.vx)).toBe(true);
@@ -153,15 +157,35 @@ describe('behaviors', () => {
       wolfReproduceRate: 1.0, // guarantee reproduction
     };
 
-    // Mock Math.random to return 0 (below any rate, ensuring reproduction)
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
-
-    const offspring = tryReproduce(agent, reproConfig);
+    // Random returns 0 which is <= rate of 1.0, so reproduction succeeds
+    const offspring = tryReproduce(agent, reproConfig, fixedRandom(0));
 
     expect(offspring).not.toBeNull();
     expect(agent.energy).toBe(50);
     expect(offspring!.energy).toBe(50);
+  });
 
-    randomSpy.mockRestore();
+  it('findGrassPatchAt returns correct patch via O(1) index', () => {
+    const grass = createGrassGrid(config);
+    const gridSize = config['grassGridSize']!;
+    const width = config['width']!;
+    const height = config['height']!;
+    const cellW = width / gridSize;
+    const cellH = height / gridSize;
+
+    // Look up the patch at grid position (3, 5) by world coordinate
+    const worldX = (3 + 0.5) * cellW;
+    const worldY = (5 + 0.5) * cellH;
+    const patch = findGrassPatchAt(worldX, worldY, grass, config);
+
+    expect(patch).not.toBeNull();
+    expect(patch!.x).toBe(3);
+    expect(patch!.y).toBe(5);
+  });
+
+  it('findGrassPatchAt returns null for out-of-bounds coordinates', () => {
+    const grass = createGrassGrid(config);
+    const patch = findGrassPatchAt(-10, -10, grass, config);
+    expect(patch).toBeNull();
   });
 });

@@ -13,7 +13,7 @@ describe('integration', () => {
   });
 
   it('world setup + 100 steps doesn\'t crash', () => {
-    const world = new WolfSheepWorld({ ...wolfSheepDef.defaultConfig });
+    const world = new WolfSheepWorld({ ...wolfSheepDef.defaultConfig, seed: 42 });
     world.setup();
     for (let i = 0; i < 100; i++) {
       world.step();
@@ -22,7 +22,7 @@ describe('integration', () => {
   });
 
   it('population dynamics emerge', () => {
-    const config = { ...wolfSheepDef.defaultConfig, initialWolves: 10, initialSheep: 50 };
+    const config = { ...wolfSheepDef.defaultConfig, initialWolves: 10, initialSheep: 50, seed: 42 };
     const world = new WolfSheepWorld(config);
     world.setup();
     const initialSheep = world.agents.filter(a => a.type === 'sheep').length;

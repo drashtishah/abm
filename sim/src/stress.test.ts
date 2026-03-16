@@ -3,7 +3,7 @@ import { WolfSheepWorld } from './models/wolf-sheep/world.js';
 import { wolfSheepDef } from './models/wolf-sheep/definition.js';
 import { getEvents, clearEvents } from './framework/logger.js';
 
-const defaultConfig = { ...wolfSheepDef.defaultConfig };
+const defaultConfig = { ...wolfSheepDef.defaultConfig, seed: 42 };
 
 function createWorld(overrides: Record<string, number> = {}): WolfSheepWorld {
   clearEvents();
@@ -64,32 +64,6 @@ describe('stress tests', () => {
     const sheepPops = world.populationHistory.map(h => h['sheep'] ?? 0);
     const wolfPops = world.populationHistory.map(h => h['wolves'] ?? 0);
 
-    // Smooth with window of 10 to avoid noise
-    function smooth(arr: number[], w: number): number[] {
-      const result: number[] = [];
-      for (let i = 0; i < arr.length; i++) {
-        let sum = 0;
-        let count = 0;
-        for (let j = Math.max(0, i - w); j <= Math.min(arr.length - 1, i + w); j++) {
-          sum += arr[j]!;
-          count++;
-        }
-        result.push(sum / count);
-      }
-      return result;
-    }
-
-    const smoothSheep = smooth(sheepPops, 10);
-    let localMins = 0;
-    let localMaxs = 0;
-    for (let i = 5; i < smoothSheep.length - 5; i++) {
-      const prev = smoothSheep[i - 5]!;
-      const curr = smoothSheep[i]!;
-      const next = smoothSheep[i + 5]!;
-      if (curr < prev && curr < next) localMins++;
-      if (curr > prev && curr > next) localMaxs++;
-    }
-
     // At minimum, populations should change — not stay flat
     const minSheep = Math.min(...sheepPops);
     const maxSheep = Math.max(...sheepPops);
@@ -119,12 +93,13 @@ describe('stress tests', () => {
     expect(finalGrass).toBeGreaterThan(0);
   });
 
-  it('populationHistory length matches tick count', () => {
+  it('populationHistory capped at 500 but tick keeps counting', () => {
     const world = createWorld();
-    for (let i = 0; i < 100; i++) {
+    for (let i = 0; i < 600; i++) {
       world.step();
     }
-    expect(world.populationHistory.length).toBe(world.tick);
+    expect(world.populationHistory.length).toBeLessThanOrEqual(500);
+    expect(world.tick).toBe(600);
   });
 
   it('build produces valid dist', async () => {

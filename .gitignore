@@ -6,3 +6,5 @@ docs/
 node_modules/
 dist/
 screenshot-audit/
+sim/science/.venv/
+sim/science/*/experiments/

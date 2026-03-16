@@ -1,4 +1,4 @@
-import type { World } from './types.js';
+import type { World, ExpectedPattern } from './types.js';
 
 export interface ConfigField {
   key: string;
@@ -34,6 +34,7 @@ export interface ModelDefinition {
   configSchema: ConfigField[];
   agentTypes: AgentTypeDefinition[];
   toggles?: ToggleField[];
+  expectedPattern?: ExpectedPattern;
   createWorld(config: Record<string, number>): World;
 }
 

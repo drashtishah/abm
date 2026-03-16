@@ -30,3 +30,40 @@ export interface World extends WorldState {
   updateConfig(partial: Record<string, number>): void;
   getPopulationCounts(): Record<string, number>;
 }
+
+// -- Expected pattern types for scientist skill --
+
+export interface PatternCriteriaBase {
+  description: string;
+  minTicks: number;
+  populations: string[];  // must match keys from getPopulationCounts()
+}
+
+export interface OscillationCriteria extends PatternCriteriaBase {
+  type: 'oscillation';
+  minCycles: number;
+  maxExtinctionRate: number;
+}
+
+export interface SegregationCriteria extends PatternCriteriaBase {
+  type: 'segregation';
+  minClusterIndex: number;
+}
+
+export interface EpidemicCurveCriteria extends PatternCriteriaBase {
+  type: 'epidemic-curve';
+  peakWithinTicks: number;
+  mustDecline: boolean;
+}
+
+export interface EquilibriumCriteria extends PatternCriteriaBase {
+  type: 'equilibrium';
+  stabilizeByTick: number;
+  maxVariance: number;
+}
+
+export type ExpectedPattern =
+  | OscillationCriteria
+  | SegregationCriteria
+  | EpidemicCurveCriteria
+  | EquilibriumCriteria;

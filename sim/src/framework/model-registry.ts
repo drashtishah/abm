@@ -7,6 +7,7 @@ export interface ConfigField {
   max: number;
   step: number;
   default: number;
+  info?: string;
 }
 
 export interface AgentTypeDefinition {

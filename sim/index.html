@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ABM Simulator</title>
+  <title>Agent-Based Simulator — Wolf Sheep Predation</title>
   <style>
     :root {
       --bg-primary: #0a0e27;
@@ -35,12 +35,48 @@
     .app {
       display: grid;
       grid-template-rows: auto 1fr 200px;
-      grid-template-columns: 280px 1fr;
+      grid-template-columns: 280px 4px 1fr;
       grid-template-areas:
-        "header header"
-        "controls canvas"
-        "chart chart";
+        "header header header"
+        "controls drag canvas"
+        "chart chart chart";
       height: 100vh;
+    }
+
+    .drag-handle {
+      grid-area: drag;
+      background: var(--border);
+      cursor: col-resize;
+      width: 4px;
+      transition: background 0.2s;
+      position: relative;
+    }
+
+    .drag-handle::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: -4px;
+      right: -4px;
+      cursor: col-resize;
+    }
+
+    .drag-handle::after {
+      content: '\u22EE';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--text-secondary);
+      font-size: 14px;
+      pointer-events: none;
+    }
+
+    .drag-handle:hover,
+    .drag-handle:focus,
+    .drag-handle.dragging {
+      background: var(--accent-primary);
     }
 
     .header {
@@ -86,7 +122,9 @@
       overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
+      height: 0;
+      min-height: 0;
     }
 
     .model-context {
@@ -141,15 +179,59 @@
 
     .slider-row {
       display: grid;
-      grid-template-columns: 1fr 1fr auto;
+      grid-template-columns: auto 1fr auto;
       align-items: center;
-      gap: 6px;
+      gap: 4px 6px;
       font-size: 11px;
     }
 
     .slider-row label {
       color: var(--text-primary);
       font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .info-icon {
+      cursor: help;
+      color: var(--text-secondary);
+      font-size: 10px;
+      opacity: 0.7;
+      outline: none;
+    }
+
+    .info-icon:hover,
+    .info-icon:focus {
+      opacity: 1;
+    }
+
+    .info-wrapper {
+      position: relative;
+      display: inline-flex;
+    }
+
+    .info-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      font-size: 10px;
+      white-space: nowrap;
+      z-index: 10;
+    }
+
+    .info-wrapper:hover .info-tooltip,
+    .info-wrapper:focus-within .info-tooltip {
+      display: block;
     }
 
     .slider-row input[type="range"] {
@@ -262,7 +344,14 @@
         height: auto;
       }
 
-      .controls { border-right: none; border-bottom: 1px solid var(--border); }
+      .drag-handle { display: none; }
+
+      .controls {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        height: auto;
+        min-height: auto;
+      }
 
       .canvas-area { padding: 0; }
 
@@ -279,7 +368,7 @@
       <h1>ABM Simulator</h1>
       <div class="header-right">
         <span class="tick-display" id="tick-display">Tick: 0</span>
-        <select id="model-select"></select>
+        <select id="model-select" aria-label="Select simulation model"></select>
       </div>
     </header>
 
@@ -314,6 +403,10 @@
 
       <div class="attribution" id="attribution"></div>
     </aside>
+
+    <div class="drag-handle" id="drag-handle" tabindex="0" role="separator"
+         aria-orientation="vertical" aria-valuenow="280" aria-valuemin="200"
+         aria-valuemax="500" title="Drag to resize sidebar"></div>
 
     <div class="canvas-area">
       <canvas id="sim-canvas" width="800" height="600"></canvas>

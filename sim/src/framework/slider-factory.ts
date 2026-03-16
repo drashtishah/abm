@@ -36,6 +36,39 @@ export function createSliders(
       world.updateConfig({ [field.key]: Number(input.value) });
     });
 
+    if (field.info) {
+      const infoWrapper = document.createElement('span');
+      infoWrapper.className = 'info-wrapper';
+
+      const icon = document.createElement('span');
+      icon.className = 'info-icon';
+      icon.textContent = '\u24d8';
+      icon.setAttribute('tabindex', '0');
+      icon.setAttribute('role', 'button');
+      icon.setAttribute('aria-label', `Info about ${field.label}`);
+
+      const tooltip = document.createElement('span');
+      tooltip.className = 'info-tooltip';
+      tooltip.id = `tooltip-${field.key}`;
+      tooltip.setAttribute('role', 'tooltip');
+      tooltip.textContent = field.info;
+
+      icon.setAttribute('aria-describedby', tooltip.id);
+
+      // Dismiss on Escape
+      icon.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          icon.blur();
+        }
+      });
+
+      infoWrapper.appendChild(icon);
+      infoWrapper.appendChild(tooltip);
+      label.appendChild(infoWrapper);
+
+      input.setAttribute('aria-describedby', `tooltip-${field.key}`);
+    }
+
     wrapper.appendChild(label);
     wrapper.appendChild(input);
     wrapper.appendChild(valueDisplay);

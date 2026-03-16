@@ -47,7 +47,7 @@ export const wolfSheepDef: ModelDefinition = {
     { key: 'fleeRadius', label: 'Flee Radius', min: 10, max: 80, step: 1, default: 50 },
   ],
   agentTypes: [
-    { type: 'wolf', color: '#ff2daa', radius: 4, shape: 'circle' },
+    { type: 'wolf', color: '#ff2daa', radius: 4, shape: 'triangle' },
     { type: 'sheep', color: '#affff7', radius: 3, shape: 'circle' },
   ],
   toggles: [

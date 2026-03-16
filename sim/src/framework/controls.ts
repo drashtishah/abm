@@ -13,10 +13,13 @@ export function setupControls(world: World): void {
   }
 
   if (goBtn) {
+    goBtn.title = 'Run/stop the simulation continuously';
+    goBtn.setAttribute('aria-pressed', 'false');
     goBtn.addEventListener('click', () => {
       world.running = !world.running;
       goBtn.textContent = world.running ? 'Stop' : 'Go';
       goBtn.classList.toggle('active', world.running);
+      goBtn.setAttribute('aria-pressed', String(world.running));
     });
   }
 

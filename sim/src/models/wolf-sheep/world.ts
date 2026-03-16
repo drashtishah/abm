@@ -168,12 +168,12 @@ export class WolfSheepWorld extends BaseWorld {
   }
 
   getPopulationCounts(): Record<string, number> {
-    const wolves = this.agents.filter(a => a.type === 'wolf' && a.alive).length;
+    const wolf = this.agents.filter(a => a.type === 'wolf' && a.alive).length;
     const sheep = this.agents.filter(a => a.type === 'sheep' && a.alive).length;
     let grassAlive = 0;
     if (isWolfSheepState(this.extraState)) {
       grassAlive = this.extraState.grass.filter(g => g.alive).length;
     }
-    return { wolves, sheep, grass: grassAlive };
+    return { wolf, sheep, grass: grassAlive };
   }
 }

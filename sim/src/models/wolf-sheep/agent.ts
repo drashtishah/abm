@@ -16,7 +16,7 @@ export function resetIdCounter(): void {
 export function createWolf(config: Record<string, number>, random: () => number): Agent {
   const w = config['width'] ?? 800;
   const h = config['height'] ?? 600;
-  const radius = 4;
+  const radius = 6;
   return {
     id: nextId++,
     type: 'wolf',
@@ -36,7 +36,7 @@ export function createWolf(config: Record<string, number>, random: () => number)
 export function createSheep(config: Record<string, number>, random: () => number): Agent {
   const w = config['width'] ?? 800;
   const h = config['height'] ?? 600;
-  const radius = 3;
+  const radius = 5;
   return {
     id: nextId++,
     type: 'sheep',

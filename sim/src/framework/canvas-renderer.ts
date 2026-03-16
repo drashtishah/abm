@@ -23,7 +23,7 @@ export function render(
   ctx.fillRect(0, 0, w, h);
 
   // Draw grass grid if present
-  if (isGrassState(world.extraState) && world.config['showGrass'] !== 0) {
+  if (isGrassState(world.extraState)) {
     const grass = world.extraState.grass;
     const gridSize = world.config['grassGridSize'] ?? 20;
     const cellW = w / gridSize;
@@ -65,6 +65,8 @@ export function render(
       ctx.lineTo(cx - r * 0.866, cy + r * 0.5);
       ctx.lineTo(cx + r * 0.866, cy + r * 0.5);
       ctx.closePath();
+    } else if (shape === 'square') {
+      ctx.rect(cx - r * 0.7, cy - r * 0.7, r * 1.4, r * 1.4);
     } else {
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
     }

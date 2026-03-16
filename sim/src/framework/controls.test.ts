@@ -6,7 +6,7 @@ import type { World } from './types.js';
 function makeWorld(): World {
   return {
     agents: [],
-    config: {},
+    config: { speed: 2 },
     running: false,
     tick: 0,
     populationHistory: [],
@@ -19,6 +19,8 @@ function makeWorld(): World {
   };
 }
 
+const defaultConfig = { speed: 1 };
+
 describe('controls', () => {
   beforeEach(() => {
     document.body.innerHTML = `
@@ -29,34 +31,61 @@ describe('controls', () => {
     `;
   });
 
-  it('play button sets running to true', () => {
+  it('go button toggles running state', () => {
     const world = makeWorld();
-    setupControls(world);
+    setupControls({ world, defaultConfig });
 
     const goBtn = document.getElementById('btn-go')!;
     goBtn.click();
-
     expect(world.running).toBe(true);
-  });
 
-  it('pause button sets running to false', () => {
-    const world = makeWorld();
-    setupControls(world);
-
-    const goBtn = document.getElementById('btn-go')!;
-    goBtn.click(); // start
-    goBtn.click(); // stop
-
+    goBtn.click();
     expect(world.running).toBe(false);
   });
 
-  it('reset calls world.reset', () => {
+  it('setup calls reset without changing config', () => {
     const world = makeWorld();
-    setupControls(world);
+    setupControls({ world, defaultConfig });
+
+    const setupBtn = document.getElementById('btn-setup')!;
+    setupBtn.click();
+
+    expect(world.reset).toHaveBeenCalled();
+    // Config should NOT be overwritten with defaults
+    expect(world.updateConfig).not.toHaveBeenCalled();
+  });
+
+  it('reset restores default config and calls reset', () => {
+    const world = makeWorld();
+    const onReset = vi.fn();
+    setupControls({ world, defaultConfig, onReset });
 
     const resetBtn = document.getElementById('btn-reset')!;
     resetBtn.click();
 
+    expect(world.updateConfig).toHaveBeenCalledWith(defaultConfig);
     expect(world.reset).toHaveBeenCalled();
+    expect(onReset).toHaveBeenCalled();
+  });
+
+  it('step calls world.step when not running', () => {
+    const world = makeWorld();
+    setupControls({ world, defaultConfig });
+
+    const stepBtn = document.getElementById('btn-step')!;
+    stepBtn.click();
+
+    expect(world.step).toHaveBeenCalled();
+  });
+
+  it('step does nothing when running', () => {
+    const world = makeWorld();
+    world.running = true;
+    setupControls({ world, defaultConfig });
+
+    const stepBtn = document.getElementById('btn-step')!;
+    stepBtn.click();
+
+    expect(world.step).not.toHaveBeenCalled();
   });
 });

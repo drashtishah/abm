@@ -13,11 +13,12 @@ export function renderStats(
   }
 
   // Draw population counts top-left
+  const statsThemeColors = getThemeColors();
   ctx.font = '14px "JetBrains Mono", "Fira Code", monospace';
   let y = 24;
   const counts = world.getPopulationCounts();
   for (const [key, value] of Object.entries(counts)) {
-    ctx.fillStyle = colors[key] ?? '#affff7';
+    ctx.fillStyle = colors[key] ?? statsThemeColors.textPrimary ?? '#affff7';
     ctx.fillText(`${key}: ${value}`, 12, y);
     y += 20;
   }
@@ -99,12 +100,12 @@ export function renderChart(
     ctx.fillText(String(t), xPos - 10, h - 5);
   }
 
-  // Color map for lines
+  // Color map — population keys must match agent type names exactly
   const lineColors: Record<string, string> = {};
   for (const at of model.agentTypes) {
     lineColors[at.type] = at.color;
   }
-  // Default grass color
+  // Grass color from theme if not matched by agent type
   if (!lineColors['grass']) {
     const theme = getThemeColors();
     lineColors['grass'] = theme.accentPrimary ?? '#66ff55';
@@ -129,15 +130,5 @@ export function renderChart(
       }
     }
     ctx.stroke();
-  }
-
-  // Legend
-  ctx.font = '12px "JetBrains Mono", monospace';
-  let legendX = marginLeft;
-  for (const key of keys) {
-    ctx.fillStyle = lineColors[key] ?? '#affff7';
-    ctx.fillRect(legendX, 6, 12, 12);
-    ctx.fillText(key, legendX + 16, 16);
-    legendX += key.length * 8 + 30;
   }
 }

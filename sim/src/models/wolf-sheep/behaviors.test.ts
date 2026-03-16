@@ -93,19 +93,13 @@ describe('behaviors', () => {
     expect(speed).toBeGreaterThan(0);
   });
 
-  it('wolf chases nearest sheep', () => {
+  it('wolf moves randomly (NetLogo-style random walk)', () => {
     const wolf = makeAgent({ type: 'wolf', x: 200, y: 200, speed: 2.0 });
-    const sheep = makeAgent({ type: 'sheep', x: 250, y: 200 });
-    const distBefore = distance(wolf, sheep);
 
-    const vel = chaseNearest(wolf, [sheep], config, fixedRandom(0.5));
-    wolf.vx = vel.vx;
-    wolf.vy = vel.vy;
-    wolf.x += wolf.vx;
-    wolf.y += wolf.vy;
-
-    const distAfter = distance(wolf, sheep);
-    expect(distAfter).toBeLessThan(distBefore);
+    const vel = chaseNearest(wolf, [], config, fixedRandom(0.5));
+    // Wolf moves at its speed regardless of sheep
+    const speed = Math.sqrt(vel.vx ** 2 + vel.vy ** 2);
+    expect(speed).toBeCloseTo(2.0, 1);
   });
 
   it('wolf with no sheep wanders', () => {
@@ -153,16 +147,29 @@ describe('behaviors', () => {
     const agent = makeAgent({ type: 'wolf', energy: 100 });
     const reproConfig = {
       ...config,
-      wolfReproduceThreshold: 50,
-      wolfReproduceRate: 1.0, // guarantee reproduction
+      wolfReproduceRate: 100, // 100% chance — guarantee reproduction
     };
 
-    // Random returns 0 which is <= rate of 1.0, so reproduction succeeds
+    // Random returns 0, so 0 * 100 < 100 → reproduction succeeds
     const offspring = tryReproduce(agent, reproConfig, fixedRandom(0));
 
     expect(offspring).not.toBeNull();
     expect(agent.energy).toBe(50);
     expect(offspring!.energy).toBe(50);
+  });
+
+  it('tryReproduce works with low energy (no threshold, matches NetLogo)', () => {
+    const agent = makeAgent({ type: 'sheep', energy: 2 });
+    const reproConfig = {
+      ...config,
+      sheepReproduceRate: 100, // 100% chance
+    };
+
+    const offspring = tryReproduce(agent, reproConfig, fixedRandom(0));
+
+    expect(offspring).not.toBeNull();
+    expect(agent.energy).toBe(1);
+    expect(offspring!.energy).toBe(1);
   });
 
   it('findGrassPatchAt returns correct patch via O(1) index', () => {

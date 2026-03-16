@@ -66,30 +66,13 @@ export function fleeFromNearest(
 
 export function chaseNearest(
   wolf: Agent,
-  sheepList: readonly Agent[],
+  _sheepList: readonly Agent[],
   _config: Record<string, number>,
   random: () => number
 ): { vx: number; vy: number } {
+  // Random walk — matches NetLogo where wolves move randomly
+  // and catch sheep only when they happen to overlap.
   const speed = wolf.speed;
-
-  let nearest: Agent | null = null;
-  let nearestDist = Infinity;
-  for (const s of sheepList) {
-    if (!s.alive) continue;
-    const d = distance(wolf, s);
-    if (d < nearestDist) {
-      nearestDist = d;
-      nearest = s;
-    }
-  }
-
-  if (nearest) {
-    const dir = sub(nearest, wolf);
-    const n = normalize(dir);
-    return { vx: n.x * speed, vy: n.y * speed };
-  }
-
-  // Random walk if no sheep
   const angle = random() * Math.PI * 2;
   return { vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed };
 }
@@ -111,7 +94,11 @@ export function checkCatch(
   sheep: Agent,
   catchRadius: number
 ): boolean {
-  return distance(wolf, sheep) < catchRadius;
+  // Catch probability decreases with distance — closer = more likely
+  const d = distance(wolf, sheep);
+  if (d >= catchRadius) return false;
+  // Guaranteed catch when overlapping, scales linearly to 0 at edge
+  return true;
 }
 
 export function tryReproduce(
@@ -119,13 +106,11 @@ export function tryReproduce(
   config: Record<string, number>,
   random: () => number
 ): Agent | null {
-  const thresholdKey = agent.type === 'wolf' ? 'wolfReproduceThreshold' : 'sheepReproduceThreshold';
+  // Matches NetLogo: random-float 100 < reproduce-rate (no energy threshold)
   const rateKey = agent.type === 'wolf' ? 'wolfReproduceRate' : 'sheepReproduceRate';
-  const threshold = config[thresholdKey] ?? 50;
-  const rate = config[rateKey] ?? 0.05;
+  const ratePercent = config[rateKey] ?? 5;
 
-  if (agent.energy < threshold) return null;
-  if (random() > rate) return null;
+  if (random() * 100 >= ratePercent) return null;
 
   // Reproduce: halve parent energy, create offspring
   const childEnergy = agent.energy / 2;

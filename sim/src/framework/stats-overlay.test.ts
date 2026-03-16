@@ -34,7 +34,7 @@ function makeWorld(overrides: Partial<World> = {}): World {
     step: vi.fn(),
     reset: vi.fn(),
     updateConfig: vi.fn(),
-    getPopulationCounts: vi.fn(() => ({ wolves: 30, sheep: 80, grass: 350 })),
+    getPopulationCounts: vi.fn(() => ({ wolf: 30, sheep: 80, grass: 350 })),
     random: vi.fn(() => 0.5),
     ...overrides,
   };
@@ -48,7 +48,7 @@ const model: ModelDefinition = {
   defaultConfig: {},
   configSchema: [],
   agentTypes: [
-    { type: 'wolves', color: '#ff2daa', radius: 4, shape: 'circle' },
+    { type: 'wolf', color: '#ff2daa', radius: 4, shape: 'circle' },
     { type: 'sheep', color: '#affff7', radius: 3, shape: 'circle' },
   ],
   createWorld: vi.fn() as unknown as ModelDefinition['createWorld'],
@@ -69,7 +69,7 @@ describe('stats-overlay', () => {
   it('renderChart draws population graph', () => {
     const ctx = makeCtx();
     const history = Array.from({ length: 10 }, (_, i) => ({
-      wolves: 50 - i,
+      wolf: 50 - i,
       sheep: 100 + i,
       grass: 350,
     }));
@@ -77,5 +77,36 @@ describe('stats-overlay', () => {
     renderChart(ctx, world, model);
 
     expect(ctx.lineTo).toHaveBeenCalled();
+  });
+
+  it('chart uses agent type colors for population keys (singular→plural match)', () => {
+    // Real model: agentTypes has type:"wolf", population key is "wolves"
+    const realModel: ModelDefinition = {
+      ...model,
+      agentTypes: [
+        { type: 'wolf', color: '#ff2daa', radius: 6, shape: 'triangle' },
+        { type: 'sheep', color: '#affff7', radius: 5, shape: 'circle' },
+      ],
+    };
+
+    // Track strokeStyle assignments
+    const strokeCalls: string[] = [];
+    const ctx = makeCtx();
+    Object.defineProperty(ctx, 'strokeStyle', {
+      set(v: string) { strokeCalls.push(v); },
+      get() { return strokeCalls[strokeCalls.length - 1] ?? ''; },
+      configurable: true,
+    });
+
+    const history = Array.from({ length: 10 }, () => ({
+      wolf: 30,
+      sheep: 100,
+      grass: 200,
+    }));
+    const world = makeWorld({ populationHistory: history });
+    renderChart(ctx, world, realModel);
+
+    // Wolf line should use pink (#ff2daa) — "wolves".includes("wolf") matches
+    expect(strokeCalls).toContain('#ff2daa');
   });
 });

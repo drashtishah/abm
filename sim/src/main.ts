@@ -3,7 +3,7 @@ import { listModels, getModel } from './framework/model-registry.js';
 import type { ModelDefinition } from './framework/model-registry.js';
 import type { World } from './framework/types.js';
 import { render } from './framework/canvas-renderer.js';
-import { renderStats, renderChart } from './framework/stats-overlay.js';
+import { renderChart } from './framework/stats-overlay.js';
 import { setupControls } from './framework/controls.js';
 import { createSliders } from './framework/slider-factory.js';
 import { exportCSV } from './framework/csv-export.js';
@@ -27,6 +27,7 @@ const attribution = document.getElementById('attribution')!;
 const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
 const speedValue = document.getElementById('speed-value')!;
 const downloadBtn = document.getElementById('btn-download')!;
+const chartArea = document.querySelector('.chart-area') as HTMLElement;
 
 // Agent inspector
 const inspectorEl = document.getElementById('agent-inspector')!;
@@ -84,6 +85,10 @@ function loadModel(id: string): void {
   // Reset tick tracking for new model
   lastRenderedTick = -1;
 
+  // Hide chart and disable CSV until simulation produces data
+  chartArea.classList.remove('has-data');
+  downloadBtn.setAttribute('disabled', '');
+
   // Update UI
   modelContext.innerHTML = renderContextHTML(def.context);
   attribution.innerHTML = def.credit
@@ -91,7 +96,21 @@ function loadModel(id: string): void {
     : '';
 
   createSliders(def, world, sliderContainer);
-  setupControls(world);
+  setupControls({
+    world,
+    defaultConfig: { ...def.defaultConfig },
+    onReset: () => {
+      // Reset slider values to defaults without rebuilding (preserves advanced section state)
+      for (const field of def.configSchema) {
+        const slider = document.getElementById(`slider-${field.key}`) as HTMLInputElement | null;
+        if (slider) {
+          slider.value = String(field.default);
+          const valueSpan = slider.parentElement?.querySelector('.slider-value');
+          if (valueSpan) valueSpan.textContent = String(field.default);
+        }
+      }
+    },
+  });
 
   // Set canvas size
   simCanvas.width = (world.config['width'] ?? 800);
@@ -314,24 +333,37 @@ function loop(): void {
   const speed = parseInt(speedSlider.value, 10) || 1;
 
   if (world.running) {
-    for (let i = 0; i < speed; i++) {
+    // Cap at 10 steps per frame to prevent jank on low-end hardware
+    const effectiveSteps = Math.min(speed, 10);
+    for (let i = 0; i < effectiveSteps; i++) {
       world.step();
     }
   }
 
   // Render every frame
   render(simCtx, world, currentModel);
-  renderStats(simCtx, world, currentModel);
   renderChart(chartCtx, world, currentModel);
 
   // Skip redundant DOM writes when paused (Task 11)
   if (world.tick !== lastRenderedTick) {
     const counts = world.getPopulationCounts();
     tickDisplay.textContent = `Tick: ${world.tick}`;
-    popWolves.textContent = `Wolves: ${counts['wolves'] ?? 0}`;
+    popWolves.textContent = `Wolves: ${counts['wolf'] ?? 0}`;
     popSheep.textContent = `Sheep: ${counts['sheep'] ?? 0}`;
     popGrass.textContent = `Grass: ${counts['grass'] ?? 0}`;
     lastRenderedTick = world.tick;
+
+    // Show chart once there's data, enable CSV download
+    const hasData = world.populationHistory.length > 0;
+    const wasHidden = !chartArea.classList.contains('has-data');
+    chartArea.classList.toggle('has-data', hasData);
+    if (hasData) {
+      downloadBtn.removeAttribute('disabled');
+      // Resize chart canvas when first shown (was 0 height while hidden)
+      if (wasHidden) resizeChart();
+    } else {
+      downloadBtn.setAttribute('disabled', '');
+    }
   }
 
   // Disable step button while running

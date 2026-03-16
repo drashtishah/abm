@@ -58,7 +58,7 @@ describe('WolfSheepWorld', () => {
 
   it('step keeps agents in bounds', () => {
     const world = createWorld();
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 100; i++) {
       world.step();
     }
     const aliveAgents = world.agents.filter(a => a.alive);

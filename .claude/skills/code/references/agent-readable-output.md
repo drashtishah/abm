@@ -12,7 +12,7 @@ The simulator must be usable not only by humans but also by AI agents and automa
 All annotatable UI sections use `data-section` attributes for identification:
 
 ```html
-<h1 data-section="TITLE">ABM Simulator</h1>
+<h1 data-section="TITLE">Simulator</h1>
 <span data-section="TICK-DISPLAY" id="tick-display">Tick: 0</span>
 <select data-section="MODEL-SELECTOR" id="model-select">...</select>
 <pre data-section="MODEL-DESCRIPTION" id="model-context">...</pre>

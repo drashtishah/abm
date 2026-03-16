@@ -57,6 +57,14 @@ These rules produce emergent behavior X.`,
     // { key: 'showEnergy', label: 'Show Energy', default: false },
   ],
   createWorld: (config: Record<string, number>) => new MyWorld(config),
+  expectedPattern: {
+    type: 'oscillation',  // oscillation | segregation | epidemic-curve | equilibrium
+    description: 'Description of expected emergent behavior from literature',
+    minTicks: 500,
+    populations: ['predator', 'prey'],  // keys from getPopulationCounts()
+    minCycles: 3,            // oscillation: minimum peak count
+    maxExtinctionRate: 0.1,  // oscillation: fraction of runs where species dies
+  },
 };
 
 registerModel(myModelDef);
@@ -216,7 +224,24 @@ it('<name> model survives 1000 ticks with default config', () => {
 });
 ```
 
-### 9. Run the full suite
+### 9. Define expected pattern
+
+Every model needs an `expectedPattern` in its definition. This declares the emergent behavior the model should produce, used by the `scientist` skill for automated parameter analysis.
+
+**Pattern types:**
+
+| Type | Key Fields | Use When |
+|------|-----------|----------|
+| `oscillation` | `minCycles`, `maxExtinctionRate` | Predator-prey, boom-bust cycles |
+| `segregation` | `minClusterIndex` | Schelling-style spatial clustering |
+| `epidemic-curve` | `peakWithinTicks`, `mustDecline` | SIR/disease spread |
+| `equilibrium` | `stabilizeByTick`, `maxVariance` | Converging to steady state |
+
+**`populations`** must match the keys returned by `getPopulationCounts()`.
+
+If unsure about criteria values, use the `scientist` skill to determine them empirically.
+
+### 10. Run the full suite
 
 ```bash
 cd sim
@@ -237,6 +262,7 @@ All must pass before the model is considered complete.
 - [ ] `behaviors.test.ts` — unit tests for each behavior
 - [ ] `world.test.ts` — lifecycle + multi-tick tests
 - [ ] `agent.test.ts` — factory tests
+- [ ] `expectedPattern` defined in definition.ts
 - [ ] Contract test — 1000-tick survival with NaN checks
 - [ ] Full suite passes (Vitest + tsc + Playwright)
 - [ ] Architecture diagram updated in `references/architecture.md`

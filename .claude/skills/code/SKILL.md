@@ -81,6 +81,11 @@ When adding or tuning model parameters:
 1. **If a canonical NetLogo model exists**: Use its parameter defaults and ranges as the baseline. Document the source URL in `creditUrl`.
 2. **If no canonical model exists**: Use the `research` skill (nlm-backed) to research the model domain, validate parameter ranges against literature, and document assumptions in the definition's `info` fields.
 3. **For our extensions** (parameters not in the original): Document why they exist and how defaults were chosen in the `info` tooltip text.
+4. **For systematic validation**: Use the `scientist` skill to run 3-phase sensitivity analysis (Morris screening → Sobol → optimization) and find parameter combinations that produce the model's `expectedPattern`.
+
+### Expected Pattern (required for all models)
+
+Every model must define an `expectedPattern` in its `definition.ts`. This declares the emergent behavior the model should produce with correct parameters. The `scientist` skill uses this to evaluate parameter quality. See `references/new-model-guide.md` for the schema and examples.
 
 ## 4. Architecture Rules
 
@@ -129,6 +134,8 @@ Testing pyramid (proven approach from initial build — 63 tests across 5 levels
   - Visual regression: `toHaveScreenshot()` with baselines in `sim/test/screenshots/`
   - Cross-browser: Chromium, Firefox, WebKit
   - Responsive: desktop + mobile viewports
+  - Screenshot audit: `npx playwright test screenshot-audit --project='chromium-*'` — lifecycle + resize captures (Chromium only)
+  - Quick viewport check: `bash scripts/screenshot-check.sh` — CLI screenshots at 7 viewports, no interaction
 - Stress tests: 1000-tick stability, population bounds, NaN checks (`sim/src/stress.test.ts`)
 - Bug-fix tests: `it('regression: <description>')` — stays forever
 - See `references/testing-strategy.md` for full patterns and examples
@@ -210,6 +217,7 @@ All commands run from `sim/`:
     # After unit/lint pass, run extended checks + E2E
     run: npm run lint:all    # eslint + knip (dead code) + type-coverage
     run: npx playwright test
+    run: npx playwright test screenshot-audit --project='chromium-*'
     if failures → fix and re-run (same loop logic)
 
 - Never skip a step. Never mark done until vitest + tsc + lint:all + playwright all pass.
@@ -220,10 +228,12 @@ All commands run from `sim/`:
 ### Phase 4: Preview
 1. Check dev server: `curl -s -o /dev/null -w "%{http_code}" http://localhost:5173`
 2. If not running: `cd sim && npx vite &` — poll with curl each second, up to 5s
-3. Open `http://localhost:5173` for the user
-4. For UI changes: also invoke `ui-review` skill to spin up a playground for structured feedback
-5. For pure engine changes with no visual impact: skip preview with explicit note
-6. Ask: **"All checks pass. Please verify at http://localhost:5173 — approve to push."**
+3. Run viewport screenshot check: `cd sim && bash scripts/screenshot-check.sh http://localhost:5173`
+   Review 7 viewport PNGs in `sim/screenshot-audit/<timestamp>/`
+4. Open `http://localhost:5173` for the user
+5. For UI changes: also invoke `ui-review` skill to spin up a playground for structured feedback
+6. For pure engine changes with no visual impact: skip preview with explicit note
+7. Ask: **"All checks pass. Please verify at http://localhost:5173 — approve to push."**
 
 ### Phase 5: Ship
 When user approves ("LGTM", "looks good", "ship it", "approved"):

@@ -103,16 +103,37 @@ simCanvas.addEventListener('click', (e) => {
   }
 
   if (closest) {
-    inspectorContent.innerHTML = `
-      <strong>${closest.type} #${closest.id}</strong><br>
-      x: ${closest.x.toFixed(1)}, y: ${closest.y.toFixed(1)}<br>
-      energy: ${closest.energy.toFixed(1)}<br>
-      speed: ${closest.speed}<br>
-      alive: ${closest.alive}
-    `;
+    inspectorContent.textContent = '';
+
+    const title = document.createElement('strong');
+    title.textContent = `${closest.type} #${closest.id}`;
+    inspectorContent.appendChild(title);
+
+    const details = [
+      `x: ${closest.x.toFixed(1)}, y: ${closest.y.toFixed(1)}`,
+      `energy: ${closest.energy.toFixed(1)}`,
+      `speed: ${closest.speed}`,
+      `alive: ${closest.alive}`,
+    ];
+    for (const line of details) {
+      inspectorContent.appendChild(document.createElement('br'));
+      inspectorContent.appendChild(document.createTextNode(line));
+    }
+
     inspectorEl.style.display = 'block';
-    inspectorEl.style.left = `${e.clientX + 10}px`;
-    inspectorEl.style.top = `${e.clientY + 10}px`;
+
+    // Clamp to viewport bounds
+    const inspectorRect = inspectorEl.getBoundingClientRect();
+    let left = e.clientX + 10;
+    let top = e.clientY + 10;
+    if (left + inspectorRect.width > window.innerWidth) {
+      left = window.innerWidth - inspectorRect.width - 10;
+    }
+    if (top + inspectorRect.height > window.innerHeight) {
+      top = window.innerHeight - inspectorRect.height - 10;
+    }
+    inspectorEl.style.left = `${left}px`;
+    inspectorEl.style.top = `${top}px`;
   } else {
     inspectorEl.style.display = 'none';
   }
@@ -120,6 +141,18 @@ simCanvas.addEventListener('click', (e) => {
 
 inspectorClose.addEventListener('click', () => {
   inspectorEl.style.display = 'none';
+});
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && inspectorEl.style.display === 'block') {
+    inspectorEl.style.display = 'none';
+  }
+});
+
+inspectorClose.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    inspectorEl.style.display = 'none';
+  }
 });
 
 // Resize chart canvas

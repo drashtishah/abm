@@ -6,7 +6,7 @@ export const wolfSheepDef: ModelDefinition = {
   id: 'wolf-sheep',
   name: 'Wolf Sheep Predation',
   description: 'Classic Lotka-Volterra predator-prey dynamics with grass resource layer',
-  context: 'The Lotka-Volterra predator-prey model is one of the foundational models in ecology. It demonstrates how two species populations naturally oscillate — when prey is abundant, predators thrive and grow; as predators increase, prey declines; without prey, predators starve; with fewer predators, prey rebounds. Adding grass as a resource creates a three-level food chain that produces stable oscillations matching real-world ecosystems.',
+  context: 'The Lotka-Volterra predator-prey model is one of the foundational models in ecology. It demonstrates how two species populations naturally oscillate — when prey is abundant, predators thrive and grow; as predators increase, prey declines; without prey, predators starve; with fewer predators, prey rebounds. Adding grass as a resource creates a three-level food chain. Sheep boom → wolves thrive → sheep crash → wolves starve → cycle may repeat or populations may eventually go extinct.',
   credit: 'Based on NetLogo Wolf Sheep Predation by Uri Wilensky (1997). Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.',
   defaultConfig: {
     width: 800,

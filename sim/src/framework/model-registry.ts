@@ -8,7 +8,7 @@ export interface ConfigField {
   step: number;
   default: number;
   info?: string;
-  tier?: 'basic' | 'advanced';
+  tier?: 'core' | 'advanced' | 'hidden';
 }
 
 export interface AgentTypeDefinition {

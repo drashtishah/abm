@@ -33,6 +33,21 @@ const model: ModelDefinition = {
   createWorld: vi.fn() as unknown as ModelDefinition['createWorld'],
 };
 
+const modelWithHidden: ModelDefinition = {
+  id: 'test-hidden',
+  name: 'Test Hidden',
+  description: 'test',
+  context: 'test',
+  defaultConfig: { width: 800, height: 600, preyCount: 100 },
+  configSchema: [
+    { key: 'width', label: 'Width', min: 400, max: 1200, step: 100, default: 800, tier: 'hidden' as const },
+    { key: 'height', label: 'Height', min: 300, max: 900, step: 100, default: 600, tier: 'hidden' as const },
+    { key: 'preyCount', label: 'Prey Count', min: 1, max: 200, step: 1, default: 100 },
+  ],
+  agentTypes: [],
+  createWorld: vi.fn() as unknown as ModelDefinition['createWorld'],
+};
+
 describe('slider-factory', () => {
   let container: HTMLElement;
 
@@ -67,5 +82,17 @@ describe('slider-factory', () => {
     slider.dispatchEvent(new Event('input'));
 
     expect(valueSpan!.textContent).toBe('42');
+  });
+
+  it('skips fields with tier hidden', () => {
+    const world = makeWorld();
+    world.config = { width: 800, height: 600, preyCount: 100 };
+    createSliders(modelWithHidden, world, container);
+
+    const sliders = container.querySelectorAll('input[type="range"]');
+    expect(sliders).toHaveLength(1);
+
+    const slider = sliders[0] as HTMLInputElement;
+    expect(slider.id).toBe('slider-preyCount');
   });
 });

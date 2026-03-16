@@ -9,8 +9,8 @@ export function createSliders(
   container.innerHTML = '';
 
   for (const field of model.configSchema) {
-    // Skip width/height — not user-configurable
-    if (field.key === 'width' || field.key === 'height') continue;
+    // Skip hidden fields — not user-configurable
+    if (field.tier === 'hidden') continue;
 
     const wrapper = document.createElement('div');
     wrapper.className = 'slider-row';

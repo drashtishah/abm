@@ -7,6 +7,7 @@ import { renderStats, renderChart } from './framework/stats-overlay.js';
 import { setupControls } from './framework/controls.js';
 import { createSliders } from './framework/slider-factory.js';
 import { exportCSV } from './framework/csv-export.js';
+import { renderContextHTML } from './framework/context-renderer.js';
 
 let currentModel: ModelDefinition;
 let world: World;
@@ -32,6 +33,22 @@ const inspectorEl = document.getElementById('agent-inspector')!;
 const inspectorContent = document.getElementById('inspector-content')!;
 const inspectorClose = document.getElementById('inspector-close')!;
 
+// Buffered canvas resize (Task 8: ResizeObserver race fix)
+let pendingCanvasWidth = 0;
+let pendingCanvasHeight = 0;
+
+const canvasArea = simCanvas.parentElement ?? simCanvas;
+const canvasResizeObserver = new ResizeObserver((entries) => {
+  for (const entry of entries) {
+    const { width, height } = entry.contentRect;
+    if (width > 0 && height > 0) {
+      pendingCanvasWidth = Math.floor(width);
+      pendingCanvasHeight = Math.floor(height);
+    }
+  }
+});
+canvasResizeObserver.observe(canvasArea);
+
 // Populate model selector
 const models = listModels();
 for (const m of models) {
@@ -41,16 +58,34 @@ for (const m of models) {
   modelSelect.appendChild(opt);
 }
 
+// Tick display optimization (Task 11)
+let lastRenderedTick = -1;
+let animationHandle = 0;
+
+// Event listener cleanup on model switch (Task 12)
+let modelAbortController = new AbortController();
+
 function loadModel(id: string): void {
   const def = getModel(id);
   if (!def) return;
+
+  // Cancel pending animation frame during model switch
+  cancelAnimationFrame(animationHandle);
+
+  // Abort previous model's listeners
+  modelAbortController.abort();
+  modelAbortController = new AbortController();
+  const signal = modelAbortController.signal;
 
   currentModel = def;
   world = def.createWorld({ ...def.defaultConfig });
   world.setup();
 
+  // Reset tick tracking for new model
+  lastRenderedTick = -1;
+
   // Update UI
-  modelContext.textContent = def.context;
+  modelContext.innerHTML = renderContextHTML(def.context);
   attribution.innerHTML = def.credit
     ? `<p>${def.credit}</p>`
     : '';
@@ -61,6 +96,44 @@ function loadModel(id: string): void {
   // Set canvas size
   simCanvas.width = (world.config['width'] ?? 800);
   simCanvas.height = (world.config['height'] ?? 600);
+
+  // Agent inspector on canvas click (scoped to model lifetime)
+  simCanvas.addEventListener('click', (e) => {
+    const rect = simCanvas.getBoundingClientRect();
+    const scaleX = simCanvas.width / rect.width;
+    const scaleY = simCanvas.height / rect.height;
+    const mx = (e.clientX - rect.left) * scaleX;
+    const my = (e.clientY - rect.top) * scaleY;
+
+    // Find clicked agent
+    let closest = null;
+    let closestDist = Infinity;
+    for (const agent of world.agents) {
+      if (!agent.alive) continue;
+      const dx = agent.x - mx;
+      const dy = agent.y - my;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < agent.radius * 2 && d < closestDist) {
+        closestDist = d;
+        closest = agent;
+      }
+    }
+
+    if (closest) {
+      inspectorContent.innerHTML = `
+        <strong>${closest.type} #${closest.id}</strong><br>
+        x: ${closest.x.toFixed(1)}, y: ${closest.y.toFixed(1)}<br>
+        energy: ${closest.energy.toFixed(1)}<br>
+        speed: ${closest.speed}<br>
+        alive: ${closest.alive}
+      `;
+      inspectorEl.style.display = 'block';
+      inspectorEl.style.left = `${e.clientX + 10}px`;
+      inspectorEl.style.top = `${e.clientY + 10}px`;
+    } else {
+      inspectorEl.style.display = 'none';
+    }
+  }, { signal });
 
   // Initial render
   render(simCtx, world, currentModel);
@@ -80,44 +153,7 @@ downloadBtn.addEventListener('click', () => {
   exportCSV(world, currentModel);
 });
 
-// Agent inspector on canvas click
-simCanvas.addEventListener('click', (e) => {
-  const rect = simCanvas.getBoundingClientRect();
-  const scaleX = simCanvas.width / rect.width;
-  const scaleY = simCanvas.height / rect.height;
-  const mx = (e.clientX - rect.left) * scaleX;
-  const my = (e.clientY - rect.top) * scaleY;
-
-  // Find clicked agent
-  let closest = null;
-  let closestDist = Infinity;
-  for (const agent of world.agents) {
-    if (!agent.alive) continue;
-    const dx = agent.x - mx;
-    const dy = agent.y - my;
-    const d = Math.sqrt(dx * dx + dy * dy);
-    if (d < agent.radius * 2 && d < closestDist) {
-      closestDist = d;
-      closest = agent;
-    }
-  }
-
-  if (closest) {
-    inspectorContent.innerHTML = `
-      <strong>${closest.type} #${closest.id}</strong><br>
-      x: ${closest.x.toFixed(1)}, y: ${closest.y.toFixed(1)}<br>
-      energy: ${closest.energy.toFixed(1)}<br>
-      speed: ${closest.speed}<br>
-      alive: ${closest.alive}
-    `;
-    inspectorEl.style.display = 'block';
-    inspectorEl.style.left = `${e.clientX + 10}px`;
-    inspectorEl.style.top = `${e.clientY + 10}px`;
-  } else {
-    inspectorEl.style.display = 'none';
-  }
-});
-
+// Inspector close button (not model-scoped)
 inspectorClose.addEventListener('click', () => {
   inspectorEl.style.display = 'none';
 });
@@ -141,9 +177,21 @@ if (models[0]) {
 }
 
 // Animation loop
-let frameCount = 0;
-
 function loop(): void {
+  // Skip work when tab is backgrounded (Task 7)
+  if (document.visibilityState === 'hidden') {
+    animationHandle = requestAnimationFrame(loop);
+    return;
+  }
+
+  // Apply pending resize before any draw calls (Task 8)
+  if (pendingCanvasWidth > 0 && pendingCanvasHeight > 0) {
+    simCanvas.width = pendingCanvasWidth;
+    simCanvas.height = pendingCanvasHeight;
+    pendingCanvasWidth = 0;
+    pendingCanvasHeight = 0;
+  }
+
   const speed = parseInt(speedSlider.value, 10) || 1;
 
   if (world.running) {
@@ -157,15 +205,17 @@ function loop(): void {
   renderStats(simCtx, world, currentModel);
   renderChart(chartCtx, world, currentModel);
 
-  // Update UI counters
-  const counts = world.getPopulationCounts();
-  tickDisplay.textContent = `Tick: ${world.tick}`;
-  popWolves.textContent = `Wolves: ${counts['wolves'] ?? 0}`;
-  popSheep.textContent = `Sheep: ${counts['sheep'] ?? 0}`;
-  popGrass.textContent = `Grass: ${counts['grass'] ?? 0}`;
+  // Skip redundant DOM writes when paused (Task 11)
+  if (world.tick !== lastRenderedTick) {
+    const counts = world.getPopulationCounts();
+    tickDisplay.textContent = `Tick: ${world.tick}`;
+    popWolves.textContent = `Wolves: ${counts['wolves'] ?? 0}`;
+    popSheep.textContent = `Sheep: ${counts['sheep'] ?? 0}`;
+    popGrass.textContent = `Grass: ${counts['grass'] ?? 0}`;
+    lastRenderedTick = world.tick;
+  }
 
-  frameCount++;
-  requestAnimationFrame(loop);
+  animationHandle = requestAnimationFrame(loop);
 }
 
-requestAnimationFrame(loop);
+animationHandle = requestAnimationFrame(loop);

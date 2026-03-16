@@ -1,7 +1,8 @@
 .sessions/
-.claude/plans/
-.claude/settings.local.json
+.claude/
+.agent/
 .obsidian/
+docs/
 node_modules/
 dist/
-.claude/worktrees/
+screenshot-audit/

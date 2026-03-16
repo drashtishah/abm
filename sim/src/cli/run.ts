@@ -15,6 +15,22 @@ if (!modelDef) {
 const userConfig: Record<string, number> = JSON.parse(args.config) as Record<string, number>;
 const config = { ...modelDef.defaultConfig, ...userConfig };
 
+// Convenience --seed flag merges into config
+if (args.seed !== undefined) {
+  config['seed'] = args.seed;
+}
+
+// Output model definition as JSON for external scripts
+if (args.dumpDefinition) {
+  const { configSchema, defaultConfig, agentTypes, expectedPattern, id, name, description, context, credit, toggles } = modelDef;
+  const output = JSON.stringify({ id, name, description, context, credit, defaultConfig, configSchema, agentTypes, toggles, expectedPattern }, null, 2);
+  console.log(output);
+  process.exit(0);
+}
+
+// Headless mode: keep full history for CSV export
+config['historyLimit'] = Infinity;
+
 function writeCSV(world: { populationHistory: Record<string, number>[]; tick: number }, path: string): void {
   const firstEntry = world.populationHistory[0];
   if (!firstEntry) return;

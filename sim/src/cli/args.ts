@@ -5,6 +5,8 @@ export interface CliArgs {
   batch: number;
   output: string;
   outputDir: string;
+  seed: number | undefined;
+  dumpDefinition: boolean;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -15,6 +17,8 @@ export function parseArgs(argv: string[]): CliArgs {
     batch: 0,
     output: 'output.csv',
     outputDir: './runs',
+    seed: undefined,
+    dumpDefinition: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -44,6 +48,13 @@ export function parseArgs(argv: string[]): CliArgs {
       case '--output-dir':
         if (next) args.outputDir = next;
         i++;
+        break;
+      case '--seed':
+        if (next) args.seed = parseInt(next, 10);
+        i++;
+        break;
+      case '--dump-definition':
+        args.dumpDefinition = true;
         break;
     }
   }

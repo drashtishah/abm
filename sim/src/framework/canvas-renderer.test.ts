@@ -125,6 +125,26 @@ describe('canvas-renderer', () => {
     expect(styles).toContain('#ffffff');
   });
 
+  it('render skips grass when showGrass is 0', () => {
+    const ctx = makeCtx();
+    const gs = 3;
+    const grass = [];
+    for (let y = 0; y < gs; y++) {
+      for (let x = 0; x < gs; x++) {
+        grass.push({ x, y, alive: true });
+      }
+    }
+    const world = makeWorld({
+      config: { grassGridSize: gs, showGrass: 0 },
+      extraState: { grass },
+    });
+
+    render(ctx, world, model);
+
+    // Only the background clear call, no grass patches
+    expect(ctx.fillRect).toHaveBeenCalledTimes(1);
+  });
+
   it('render skips dead agents', () => {
     const ctx = makeCtx();
     const agents = [

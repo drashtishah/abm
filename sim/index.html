@@ -247,24 +247,58 @@
       color: var(--text-secondary);
     }
 
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 12px;
+      padding: 4px 8px;
+      font-size: 11px;
+      background: var(--bg-surface);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    @media (min-width: 769px) and (max-width: 1024px) {
+      .app {
+        grid-template-columns: 240px 4px 1fr;
+      }
+    }
+
     @media (max-width: 768px) {
       body { overflow: auto; height: auto; }
 
       .app {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto 200px;
+        grid-template-rows: auto auto minmax(300px, 50vh) 200px;
         grid-template-areas:
           "header"
           "controls"
           "canvas"
-          "chart"
           "chart";
         height: auto;
       }
 
+      .drag-handle { display: none; }
       .controls { border-right: none; border-bottom: 1px solid var(--border); }
 
-      .canvas-area { padding: 0; }
+      .canvas-area {
+        min-height: 300px;
+      }
 
       #sim-canvas {
         width: 100%;
@@ -309,6 +343,7 @@
         <span class="pop-sheep" id="pop-sheep">Sheep: 0</span>
         <span class="pop-grass" id="pop-grass">Grass: 0</span>
       </div>
+      <div id="pop-status" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
       <button id="btn-download">Download CSV</button>
 
@@ -316,11 +351,16 @@
     </aside>
 
     <div class="canvas-area">
-      <canvas id="sim-canvas" width="800" height="600"></canvas>
+      <canvas id="sim-canvas" width="800" height="600" role="img" aria-label="Simulation canvas showing agent positions"></canvas>
     </div>
 
     <div class="chart-area">
-      <canvas id="chart-canvas"></canvas>
+      <div class="chart-legend" id="chart-legend" aria-label="Chart legend">
+        <span class="legend-item" style="color: var(--color-wolf);">&#9632; Wolves</span>
+        <span class="legend-item" style="color: var(--color-sheep);">&#9632; Sheep</span>
+        <span class="legend-item" style="color: var(--accent-primary);">&#9632; Grass</span>
+      </div>
+      <canvas id="chart-canvas" role="img" aria-label="Population chart"></canvas>
     </div>
   </div>
 

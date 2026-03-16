@@ -16,8 +16,8 @@
       --text-secondary: #7da4bc;
       --color-wolf: #ff2daa;
       --color-sheep: #affff7;
-      --color-grass: #2a5a20;
-      --color-grass-eaten: #2a2010;
+      --color-grass: #4a9e3a;
+      --color-grass-eaten: #0a0a0a;
       --color-danger: #ff1744;
       --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     }
@@ -342,6 +342,7 @@
     .pop-sheep { color: var(--color-sheep); }
     .pop-grass { color: var(--accent-primary); }
 
+
     .canvas-area {
       grid-area: canvas;
       display: flex;
@@ -541,7 +542,6 @@
       <div class="chart-legend" id="chart-legend" aria-label="Chart legend">
         <span class="legend-item" style="color: var(--color-wolf);">&#9632; Wolves</span>
         <span class="legend-item" style="color: var(--color-sheep);">&#9632; Sheep</span>
-        <span class="legend-item" style="color: var(--accent-primary);">&#9632; Grass</span>
       </div>
       <canvas id="chart-canvas" role="img" aria-label="Population chart"></canvas>
     </div>

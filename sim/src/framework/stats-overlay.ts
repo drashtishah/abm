@@ -50,10 +50,10 @@ export function renderChart(
   const startIdx = Math.max(0, history.length - windowSize);
   const visible = history.slice(startIdx);
 
-  // Get all keys from first entry
+  // Get chart keys from first entry (exclude grass — its scale dwarfs agents)
   const firstEntry = visible[0];
   if (!firstEntry) return;
-  const keys = Object.keys(firstEntry);
+  const keys = Object.keys(firstEntry).filter(k => k !== 'grass');
 
   // Find max value for Y scaling
   let maxVal = 0;
@@ -105,12 +105,6 @@ export function renderChart(
   for (const at of model.agentTypes) {
     lineColors[at.type] = at.color;
   }
-  // Grass color from theme if not matched by agent type
-  if (!lineColors['grass']) {
-    const theme = getThemeColors();
-    lineColors['grass'] = theme.accentPrimary ?? '#66ff55';
-  }
-
   // Draw lines
   for (const key of keys) {
     ctx.beginPath();

@@ -3,17 +3,21 @@ import type { Agent } from '../../framework/types.js';
 import type { GrassPatch } from './agent.js';
 import { resetIdCounter, createGrassGrid } from './agent.js';
 import {
-  fleeFromNearest,
-  chaseNearest,
-  bounceOffWalls,
-  checkCatch,
+  move,
+  eatGrass,
+  eatSheep,
   tryReproduce,
+  death,
+  growGrass,
   findGrassPatchAt,
 } from './behaviors.js';
 import { wolfSheepDef } from './definition.js';
-import { distance } from '../../utils/vec2.js';
 
 const config = { ...wolfSheepDef.defaultConfig };
+const width = config['width']!;
+const height = config['height']!;
+const gridSize = config['grassGridSize']!;
+const stepSize = Math.min(width / gridSize, height / gridSize);
 
 /** Deterministic random that always returns the same value */
 const fixedRandom = (value: number) => () => value;
@@ -26,12 +30,12 @@ function makeAgent(overrides: Partial<Agent> = {}): Agent {
     y: 300,
     vx: 0,
     vy: 0,
-    radius: 4,
-    speed: 2,
+    radius: 6,
+    speed: 1,
     energy: 40,
     color: '#000',
     alive: true,
-    meta: {},
+    meta: { heading: 0 },
     ...overrides,
   };
 }
@@ -45,154 +49,198 @@ describe('behaviors', () => {
     resetIdCounter();
   });
 
-  it('sheep flees from nearby wolf', () => {
-    const sheep = makeAgent({ type: 'sheep', x: 200, y: 200, speed: 1.5 });
-    const wolf = makeAgent({ type: 'wolf', x: 210, y: 200 });
-    const distBefore = distance(sheep, wolf);
+  describe('move', () => {
+    it('changes agent position', () => {
+      const agent = makeAgent({ x: 400, y: 300 });
+      move(agent, width, height, stepSize, fixedRandom(0.5));
+      // Agent should have moved
+      expect(agent.x !== 400 || agent.y !== 300).toBe(true);
+    });
 
-    const vel = fleeFromNearest(sheep, [wolf], [], config, fixedRandom(0.5));
-    sheep.vx = vel.vx;
-    sheep.vy = vel.vy;
-    sheep.x += sheep.vx;
-    sheep.y += sheep.vy;
+    it('updates heading in meta', () => {
+      const agent = makeAgent({ meta: { heading: 90 } });
+      move(agent, width, height, stepSize, fixedRandom(0.5));
+      expect(typeof agent.meta['heading']).toBe('number');
+    });
 
-    const distAfter = distance(sheep, wolf);
-    expect(distAfter).toBeGreaterThan(distBefore);
+    it('wraps around edges', () => {
+      // Agent near right edge heading east
+      const agent = makeAgent({ x: width - 1, y: 300, meta: { heading: 90 } });
+      move(agent, width, height, stepSize, fixedRandom(0)); // random(50) returns 0, no turn
+      // Should wrap to left side
+      expect(agent.x).toBeGreaterThanOrEqual(0);
+      expect(agent.x).toBeLessThan(width);
+    });
+
+    it('keeps position in bounds after many steps', () => {
+      const agent = makeAgent({ x: 100, y: 100 });
+      let seed = 0.1;
+      const rng = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      for (let i = 0; i < 500; i++) {
+        move(agent, width, height, stepSize, rng);
+      }
+      expect(agent.x).toBeGreaterThanOrEqual(0);
+      expect(agent.x).toBeLessThan(width);
+      expect(agent.y).toBeGreaterThanOrEqual(0);
+      expect(agent.y).toBeLessThan(height);
+    });
   });
 
-  it('sheep moves toward grass when no wolf nearby', () => {
-    const sheep = makeAgent({ type: 'sheep', x: 100, y: 100, speed: 1.5 });
-    // Place grass patch far away so sheep moves toward it
-    const grassPatch = makeGrassPatch({ x: 10, y: 10, alive: true });
-    // No wolves nearby (wolf far outside flee radius)
-    const wolf = makeAgent({ type: 'wolf', x: 700, y: 500 });
+  describe('eatGrass', () => {
+    it('sheep gains energy from alive grass patch', () => {
+      const cellW = width / gridSize;
+      const cellH = height / gridSize;
+      const sheep = makeAgent({ type: 'sheep', x: cellW * 0.5, y: cellH * 0.5, energy: 10 });
+      const grass = [makeGrassPatch({ x: 0, y: 0, alive: true })];
+      const gain = eatGrass(sheep, grass, config);
+      expect(gain).toBe(config['sheepGainFromFood']);
+      expect(sheep.energy).toBe(10 + config['sheepGainFromFood']!);
+      expect(grass[0]!.alive).toBe(false);
+    });
 
-    const vel = fleeFromNearest(sheep, [wolf], [grassPatch], config, fixedRandom(0.5));
-
-    // Grass cell center in world coords
-    const cellW = config['width']! / config['grassGridSize']!;
-    const cellH = config['height']! / config['grassGridSize']!;
-    const gx = (grassPatch.x + 0.5) * cellW;
-    const gy = (grassPatch.y + 0.5) * cellH;
-
-    // Velocity should point toward grass patch
-    const dx = gx - sheep.x;
-    const dy = gy - sheep.y;
-    // Dot product of velocity and direction to grass should be positive
-    const dot = vel.vx * dx + vel.vy * dy;
-    expect(dot).toBeGreaterThan(0);
+    it('returns 0 when grass is dead', () => {
+      const cellW = width / gridSize;
+      const cellH = height / gridSize;
+      const sheep = makeAgent({ type: 'sheep', x: cellW * 0.5, y: cellH * 0.5, energy: 10 });
+      const grass = [makeGrassPatch({ x: 0, y: 0, alive: false })];
+      const gain = eatGrass(sheep, grass, config);
+      expect(gain).toBe(0);
+      expect(sheep.energy).toBe(10);
+    });
   });
 
-  it('sheep random walks when no wolf and no grass', () => {
-    const sheep = makeAgent({ type: 'sheep', x: 400, y: 300, speed: 1.5 });
-    // All grass dead
-    const deadGrass = [makeGrassPatch({ alive: false })];
-    // No wolves nearby
-    const vel = fleeFromNearest(sheep, [], deadGrass, config, fixedRandom(0.5));
-    const speed = Math.sqrt(vel.vx * vel.vx + vel.vy * vel.vy);
-    expect(speed).toBeGreaterThan(0);
+  describe('eatSheep', () => {
+    it('wolf eats sheep on same patch', () => {
+      const cellW = width / gridSize;
+      const cellH = height / gridSize;
+      const wolf = makeAgent({ type: 'wolf', x: cellW * 0.5, y: cellH * 0.5, energy: 10 });
+      const sheep = makeAgent({ type: 'sheep', x: cellW * 0.5, y: cellH * 0.5 });
+      const eaten = eatSheep(wolf, [sheep], config, fixedRandom(0));
+      expect(eaten).toBe(sheep);
+      expect(sheep.alive).toBe(false);
+      expect(wolf.energy).toBe(10 + config['wolfGainFromFood']!);
+    });
+
+    it('returns null when no sheep on same patch', () => {
+      const wolf = makeAgent({ type: 'wolf', x: 10, y: 10 });
+      const sheep = makeAgent({ type: 'sheep', x: 700, y: 500 });
+      const eaten = eatSheep(wolf, [sheep], config, fixedRandom(0));
+      expect(eaten).toBeNull();
+    });
+
+    it('picks one random sheep when multiple on same patch', () => {
+      const cellW = width / gridSize;
+      const cellH = height / gridSize;
+      const wolf = makeAgent({ type: 'wolf', x: cellW * 0.5, y: cellH * 0.5, energy: 10 });
+      const s1 = makeAgent({ type: 'sheep', id: 1, x: cellW * 0.5, y: cellH * 0.5 });
+      const s2 = makeAgent({ type: 'sheep', id: 2, x: cellW * 0.5, y: cellH * 0.5 });
+      const eaten = eatSheep(wolf, [s1, s2], config, fixedRandom(0));
+      expect(eaten).not.toBeNull();
+      // One sheep should be dead, one alive
+      const deadCount = [s1, s2].filter(s => !s.alive).length;
+      expect(deadCount).toBe(1);
+    });
   });
 
-  it('wolf moves randomly (NetLogo-style random walk)', () => {
-    const wolf = makeAgent({ type: 'wolf', x: 200, y: 200, speed: 2.0 });
+  describe('tryReproduce', () => {
+    it('halves parent energy on success', () => {
+      const agent = makeAgent({ type: 'wolf', energy: 100 });
+      const offspring = tryReproduce(agent, 100, stepSize, width, height, fixedRandom(0));
+      expect(offspring).not.toBeNull();
+      expect(agent.energy).toBe(50);
+      expect(offspring!.energy).toBe(50);
+    });
 
-    const vel = chaseNearest(wolf, [], config, fixedRandom(0.5));
-    // Wolf moves at its speed regardless of sheep
-    const speed = Math.sqrt(vel.vx ** 2 + vel.vy ** 2);
-    expect(speed).toBeCloseTo(2.0, 1);
+    it('works with low energy (no threshold, matches NetLogo)', () => {
+      const agent = makeAgent({ type: 'sheep', energy: 2 });
+      const offspring = tryReproduce(agent, 100, stepSize, width, height, fixedRandom(0));
+      expect(offspring).not.toBeNull();
+      expect(agent.energy).toBe(1);
+      expect(offspring!.energy).toBe(1);
+    });
+
+    it('returns null when dice roll fails', () => {
+      const agent = makeAgent({ energy: 100 });
+      // random returns 0.99, so 0.99*100 = 99 >= 5% → no reproduce
+      const offspring = tryReproduce(agent, 5, stepSize, width, height, fixedRandom(0.99));
+      expect(offspring).toBeNull();
+      expect(agent.energy).toBe(100); // unchanged
+    });
+
+    it('offspring has random heading', () => {
+      const agent = makeAgent({ energy: 100, meta: { heading: 0 } });
+      const offspring = tryReproduce(agent, 100, stepSize, width, height, fixedRandom(0.25));
+      expect(offspring).not.toBeNull();
+      expect(offspring!.meta['heading']).toBe(0.25 * 360);
+    });
   });
 
-  it('wolf with no sheep wanders', () => {
-    const wolf = makeAgent({ type: 'wolf', x: 400, y: 300, speed: 2.0 });
-    const vel = chaseNearest(wolf, [], config, fixedRandom(0.5));
-    expect(typeof vel.vx).toBe('number');
-    expect(typeof vel.vy).toBe('number');
-    expect(Number.isFinite(vel.vx)).toBe(true);
-    expect(Number.isFinite(vel.vy)).toBe(true);
+  describe('death', () => {
+    it('kills agent with negative energy', () => {
+      const agent = makeAgent({ energy: -1 });
+      const died = death(agent);
+      expect(died).toBe(true);
+      expect(agent.alive).toBe(false);
+    });
+
+    it('does not kill agent with zero energy', () => {
+      const agent = makeAgent({ energy: 0 });
+      const died = death(agent);
+      expect(died).toBe(false);
+      expect(agent.alive).toBe(true);
+    });
+
+    it('does not kill agent with positive energy', () => {
+      const agent = makeAgent({ energy: 10 });
+      const died = death(agent);
+      expect(died).toBe(false);
+      expect(agent.alive).toBe(true);
+    });
   });
 
-  it('bounceOffWalls reverses velocity at edges', () => {
-    const width = config['width']!;
-    const height = config['height']!;
-    const agent = makeAgent({ type: 'wolf', x: width + 10, y: 300, vx: 5, vy: 0, radius: 4 });
+  describe('growGrass', () => {
+    it('regrows when timer reaches 0', () => {
+      const patch = makeGrassPatch({ alive: false, regrowthTimer: 1 });
+      growGrass(patch);
+      // Timer decremented to 0, but regrowth happens next call
+      expect(patch.regrowthTimer).toBe(0);
+      expect(patch.alive).toBe(false);
+      growGrass(patch);
+      expect(patch.alive).toBe(true);
+    });
 
-    bounceOffWalls(agent, width, height);
+    it('decrements timer on dead patch', () => {
+      const patch = makeGrassPatch({ alive: false, regrowthTimer: 5 });
+      growGrass(patch);
+      expect(patch.regrowthTimer).toBe(4);
+      expect(patch.alive).toBe(false);
+    });
 
-    expect(agent.vx).toBeLessThan(0);
-    expect(agent.x).toBeLessThanOrEqual(width - agent.radius);
+    it('does nothing to alive patch', () => {
+      const patch = makeGrassPatch({ alive: true, regrowthTimer: 10 });
+      growGrass(patch);
+      expect(patch.alive).toBe(true);
+      expect(patch.regrowthTimer).toBe(10);
+    });
   });
 
-  it('bounceOffWalls no-op for centered agent', () => {
-    const agent = makeAgent({ type: 'sheep', x: 400, y: 300, vx: 1, vy: -1, radius: 3 });
-    const origX = agent.x;
-    const origY = agent.y;
-    const origVx = agent.vx;
-    const origVy = agent.vy;
+  describe('findGrassPatchAt', () => {
+    it('returns correct patch via O(1) index', () => {
+      const grass = createGrassGrid(config, fixedRandom(0.8)); // all alive (0.8 > 0.5)
+      const cellW = width / gridSize;
+      const cellH = height / gridSize;
+      const worldX = (3 + 0.5) * cellW;
+      const worldY = (5 + 0.5) * cellH;
+      const patch = findGrassPatchAt(worldX, worldY, grass, config);
+      expect(patch).not.toBeNull();
+      expect(patch!.x).toBe(3);
+      expect(patch!.y).toBe(5);
+    });
 
-    bounceOffWalls(agent, config['width']!, config['height']!);
-
-    expect(agent.x).toBe(origX);
-    expect(agent.y).toBe(origY);
-    expect(agent.vx).toBe(origVx);
-    expect(agent.vy).toBe(origVy);
-  });
-
-  it('checkCatch true when overlapping', () => {
-    const wolf = makeAgent({ type: 'wolf', x: 100, y: 100 });
-    const sheep = makeAgent({ type: 'sheep', x: 100, y: 100 });
-    expect(checkCatch(wolf, sheep, config['catchRadius']!)).toBe(true);
-  });
-
-  it('tryReproduce halves parent energy on success', () => {
-    const agent = makeAgent({ type: 'wolf', energy: 100 });
-    const reproConfig = {
-      ...config,
-      wolfReproduceRate: 100, // 100% chance — guarantee reproduction
-    };
-
-    // Random returns 0, so 0 * 100 < 100 → reproduction succeeds
-    const offspring = tryReproduce(agent, reproConfig, fixedRandom(0));
-
-    expect(offspring).not.toBeNull();
-    expect(agent.energy).toBe(50);
-    expect(offspring!.energy).toBe(50);
-  });
-
-  it('tryReproduce works with low energy (no threshold, matches NetLogo)', () => {
-    const agent = makeAgent({ type: 'sheep', energy: 2 });
-    const reproConfig = {
-      ...config,
-      sheepReproduceRate: 100, // 100% chance
-    };
-
-    const offspring = tryReproduce(agent, reproConfig, fixedRandom(0));
-
-    expect(offspring).not.toBeNull();
-    expect(agent.energy).toBe(1);
-    expect(offspring!.energy).toBe(1);
-  });
-
-  it('findGrassPatchAt returns correct patch via O(1) index', () => {
-    const grass = createGrassGrid(config);
-    const gridSize = config['grassGridSize']!;
-    const width = config['width']!;
-    const height = config['height']!;
-    const cellW = width / gridSize;
-    const cellH = height / gridSize;
-
-    // Look up the patch at grid position (3, 5) by world coordinate
-    const worldX = (3 + 0.5) * cellW;
-    const worldY = (5 + 0.5) * cellH;
-    const patch = findGrassPatchAt(worldX, worldY, grass, config);
-
-    expect(patch).not.toBeNull();
-    expect(patch!.x).toBe(3);
-    expect(patch!.y).toBe(5);
-  });
-
-  it('findGrassPatchAt returns null for out-of-bounds coordinates', () => {
-    const grass = createGrassGrid(config);
-    const patch = findGrassPatchAt(-10, -10, grass, config);
-    expect(patch).toBeNull();
+    it('returns null for out-of-bounds coordinates', () => {
+      const grass = createGrassGrid(config, fixedRandom(0.8));
+      const patch = findGrassPatchAt(-10, -10, grass, config);
+      expect(patch).toBeNull();
+    });
   });
 });

@@ -351,6 +351,7 @@ function loop(): void {
     popWolves.textContent = `Wolves: ${counts['wolf'] ?? 0}`;
     popSheep.textContent = `Sheep: ${counts['sheep'] ?? 0}`;
     popGrass.textContent = `Grass: ${counts['grass'] ?? 0}`;
+
     lastRenderedTick = world.tick;
 
     // Show chart once there's data, enable CSV download

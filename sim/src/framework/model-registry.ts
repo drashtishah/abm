@@ -7,6 +7,7 @@ export interface ConfigField {
   max: number;
   step: number;
   default: number;
+  tier?: 'core' | 'advanced' | 'hidden';
 }
 
 export interface AgentTypeDefinition {

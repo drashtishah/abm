@@ -28,8 +28,8 @@ export const wolfSheepDef: ModelDefinition = {
     fleeRadius: 50,
   },
   configSchema: [
-    { key: 'width', label: 'Width', min: 400, max: 1200, step: 100, default: 800 },
-    { key: 'height', label: 'Height', min: 300, max: 900, step: 100, default: 600 },
+    { key: 'width', label: 'Width', min: 400, max: 1200, step: 100, default: 800, tier: 'hidden' },
+    { key: 'height', label: 'Height', min: 300, max: 900, step: 100, default: 600, tier: 'hidden' },
     { key: 'initialWolves', label: 'Initial Wolves', min: 1, max: 200, step: 1, default: 30 },
     { key: 'initialSheep', label: 'Initial Sheep', min: 1, max: 200, step: 1, default: 100 },
     { key: 'wolfSpeed', label: 'Wolf Speed', min: 0.5, max: 5, step: 0.1, default: 1.8 },

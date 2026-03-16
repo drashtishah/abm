@@ -1,0 +1,99 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Simulator" [level=1] [ref=e4]
+    - generic [ref=e5]:
+      - generic [ref=e6]: "Tick: 0"
+      - combobox [ref=e7]:
+        - option "Wolf Sheep Predation" [selected]
+  - complementary [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]: Classic predator-prey model.
+      - generic [ref=e11]: "Agent rules:"
+      - list [ref=e12]:
+        - listitem [ref=e13]: • Wolves chase nearest sheep. Catch one → gain energy.
+        - listitem [ref=e14]: • Sheep flee wolves. Eat grass → gain energy.
+        - listitem [ref=e15]: • All agents lose energy each step. Zero energy → die.
+        - listitem [ref=e16]: • Enough energy → chance to reproduce.
+        - listitem [ref=e17]: • Grass regrows after a delay.
+      - generic [ref=e18]: "These simple rules produce emergent oscillations:"
+      - generic [ref=e19]: Sheep boom → wolves thrive → sheep crash → wolves starve → repeat.
+    - generic [ref=e20]:
+      - generic [ref=e21]: Controls
+      - generic [ref=e22]:
+        - button "Setup" [ref=e23] [cursor=pointer]
+        - button "Go" [ref=e24] [cursor=pointer]
+        - button "Step" [ref=e25] [cursor=pointer]
+        - button "Reset" [ref=e26] [cursor=pointer]
+    - generic [ref=e27]:
+      - generic [ref=e28]: Speed
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - text: Speed
+          - generic [ref=e32]: ⓘ
+        - slider "Speed ⓘ" [ref=e33]: "1"
+        - generic [ref=e34]: "1"
+    - generic [ref=e35]:
+      - generic [ref=e36]: Parameters
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]:
+            - text: Initial Wolves
+            - generic [ref=e41]: ⓘ
+          - slider "Initial Wolves ⓘ" [ref=e42]: "50"
+          - generic [ref=e43]: "50"
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - text: Initial Sheep
+            - generic [ref=e47]: ⓘ
+          - slider "Initial Sheep ⓘ" [ref=e48]: "100"
+          - generic [ref=e49]: "100"
+        - generic [ref=e50]:
+          - generic [ref=e51]:
+            - text: Wolf Food Gain
+            - generic [ref=e53]: ⓘ
+          - slider "Wolf Food Gain ⓘ" [ref=e54]: "20"
+          - generic [ref=e55]: "20"
+        - generic [ref=e56]:
+          - generic [ref=e57]:
+            - text: Sheep Food Gain
+            - generic [ref=e59]: ⓘ
+          - slider "Sheep Food Gain ⓘ" [ref=e60]: "4"
+          - generic [ref=e61]: "4"
+        - generic [ref=e62]:
+          - generic [ref=e63]:
+            - text: Wolf Reproduce Rate
+            - generic [ref=e65]: ⓘ
+          - slider "Wolf Reproduce Rate ⓘ" [ref=e66]: "0.05"
+          - generic [ref=e67]: "0.05"
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - text: Sheep Reproduce Rate
+            - generic [ref=e71]: ⓘ
+          - slider "Sheep Reproduce Rate ⓘ" [ref=e72]: "0.04"
+          - generic [ref=e73]: "0.04"
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - text: Grass Regrowth
+            - generic [ref=e77]: ⓘ
+          - slider "Grass Regrowth ⓘ" [ref=e78]: "30"
+          - generic [ref=e79]: "30"
+        - generic [ref=e80]:
+          - checkbox "Show Grass" [checked] [ref=e81]
+          - generic [ref=e82]: Show Grass
+        - button "Advanced ▸" [ref=e83] [cursor=pointer]
+    - generic [ref=e84]:
+      - generic [ref=e85]: Population
+      - generic [ref=e86]:
+        - generic [ref=e87]: "Wolves: 50"
+        - generic [ref=e88]: "Sheep: 100"
+        - generic [ref=e89]: "Grass: 400"
+    - button "Download CSV" [disabled] [ref=e90]
+    - generic [ref=e91]:
+      - paragraph [ref=e92]: Based on NetLogo Wolf Sheep Predation by Uri Wilensky (1997). Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+      - paragraph [ref=e93]:
+        - link "View original model →" [ref=e94] [cursor=pointer]:
+          - /url: https://ccl.northwestern.edu/netlogo/models/WolfSheepPredation
+```

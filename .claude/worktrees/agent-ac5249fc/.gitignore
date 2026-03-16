@@ -1,0 +1,6 @@
+.sessions/
+.claude/plans/
+.claude/settings.local.json
+.obsidian/
+node_modules/
+dist/

@@ -36,19 +36,38 @@ export function render(
     }
   }
 
-  // Build color map from model definition
+  // Build color and shape maps from model definition
   const colorMap = new Map<string, string>();
+  const shapeMap = new Map<string, string>();
   for (const at of model.agentTypes) {
     colorMap.set(at.type, at.color);
+    shapeMap.set(at.type, at.shape);
   }
 
-  // Draw alive agents
+  // Scale factors for rendering agents
+  const scaleX = w / (world.config['width'] ?? w);
+  const scaleY = h / (world.config['height'] ?? h);
+  const radiusScale = Math.min(scaleX, scaleY);
+
+  // Draw alive agents with shape differentiation for color-blind support
   for (const agent of world.agents) {
     if (!agent.alive) continue;
+    const cx = agent.x * scaleX;
+    const cy = agent.y * scaleY;
+    const r = agent.radius * radiusScale;
+    const shape = shapeMap.get(agent.type) ?? 'circle';
 
-    ctx.beginPath();
     ctx.fillStyle = colorMap.get(agent.type) ?? agent.color ?? '#ffffff';
-    ctx.arc(agent.x, agent.y, agent.radius, 0, Math.PI * 2);
+    ctx.beginPath();
+
+    if (shape === 'triangle') {
+      ctx.moveTo(cx, cy - r);
+      ctx.lineTo(cx - r * 0.866, cy + r * 0.5);
+      ctx.lineTo(cx + r * 0.866, cy + r * 0.5);
+      ctx.closePath();
+    } else {
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    }
     ctx.fill();
   }
 }

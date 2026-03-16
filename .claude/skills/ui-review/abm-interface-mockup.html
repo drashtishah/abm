@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABM Simulator - Interface Review</title>
+  <style>
+    :root {
+      --bg-primary: #0a0e27;
+      --bg-surface: #1a1f3a;
+      --border: #2d3561;
+      --accent-primary: #66ff55;
+      --accent-secondary: #00ffe5;
+      --accent-tertiary: #9b80f2;
+      --text-primary: #affff7;
+      --text-secondary: #7da4bc;
+      --color-wolf: #ff2daa;
+      --color-sheep: #affff7;
+      --color-grass: #2a5a20;
+      --color-grass-eaten: #1a1200;
+      --color-danger: #ff1744;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: var(--font-mono);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Main layout: simulator left, review panel right ── */
+    .page-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      height: 100vh;
+    }
+
+    .simulator-wrap {
+      overflow: hidden;
+    }
+
+    .app {
+      display: grid;
+      grid-template-rows: auto 1fr 160px;
+      grid-template-columns: 280px 4px 1fr;
+      grid-template-areas:
+        "header header header"
+        "controls drag canvas"
+        "chart chart chart";
+      height: 100vh;
+    }
+
+    .header {
+      grid-area: header;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header h1 { font-size: 16px; color: var(--accent-primary); }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-right select {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .tick-display { color: var(--text-secondary); font-size: 13px; }
+
+    .controls {
+      grid-area: controls;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      padding: 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .model-context {
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      padding: 8px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      white-space: pre-line;
+    }
+
+    .button-group { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    button {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      padding: 6px 14px;
+      background: transparent;
+      color: var(--accent-primary);
+      border: 1px solid var(--accent-primary);
+      cursor: pointer;
+      transition: box-shadow 0.2s, background 0.2s;
+    }
+
+    button:hover { box-shadow: 0 0 8px #66ff5580; }
+
+    button.active {
+      background: var(--accent-primary);
+      color: var(--bg-primary);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 4px var(--accent-primary); }
+      50% { box-shadow: 0 0 16px var(--accent-primary); }
+    }
+
+    .section-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 4px;
+    }
+
+    .slider-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .slider-row label {
+      color: var(--text-primary);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .slider-row input[type="range"] { width: 100%; accent-color: var(--accent-primary); }
+
+    .slider-value {
+      color: var(--text-secondary);
+      font-size: 11px;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+    .toggle-row input[type="checkbox"] { accent-color: var(--accent-primary); }
+
+    .population-counts { display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; }
+    .pop-wolf { color: var(--color-wolf); }
+    .pop-sheep { color: var(--color-sheep); }
+    .pop-grass { color: var(--accent-primary); }
+
+    .info-wrapper {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .info-icon {
+      cursor: help;
+      color: var(--text-secondary);
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    .info-icon:hover { opacity: 1; }
+
+    .info-tooltip {
+      display: none;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-primary);
+      border: 1px solid var(--accent-secondary);
+      color: var(--text-primary);
+      padding: 6px 8px;
+      font-size: 10px;
+      white-space: pre;
+      z-index: 50;
+      min-width: 200px;
+      box-shadow: 0 0 8px rgba(0, 255, 229, 0.2);
+      font-family: var(--font-mono);
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+
+    .info-wrapper:hover .info-tooltip { display: block; }
+
+    /* Drag handle */
+    .drag-handle {
+      grid-area: drag;
+      background: var(--border);
+      cursor: col-resize;
+      width: 4px;
+      transition: background 0.2s;
+    }
+
+    .drag-handle:hover { background: var(--accent-primary); }
+
+    .canvas-area {
+      grid-area: canvas;
+      display: flex;
+      align-items: stretch;
+      justify-content: stretch;
+      padding: 0;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #sim-canvas { background: var(--bg-primary); width: 100%; height: 100%; display: block; }
+
+    .chart-area { grid-area: chart; border-top: 1px solid var(--border); padding: 0; overflow: hidden; }
+    #chart-canvas { width: 100%; height: 100%; }
+
+    .attribution { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+    .attribution a { color: var(--accent-secondary); text-decoration: none; }
+
+    /* Agent inspector mockup */
+    .agent-inspector-mock {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: var(--bg-surface);
+      border: 1px solid var(--accent-secondary);
+      padding: 10px;
+      font-size: 11px;
+      box-shadow: 0 0 12px rgba(0, 255, 229, 0.3);
+      max-width: 200px;
+      z-index: 10;
+    }
+
+    .agent-inspector-mock .close {
+      position: absolute;
+      top: 2px;
+      right: 6px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+
+    /* ── Annotatable sections ── */
+    [data-section] {
+      position: relative;
+      cursor: pointer;
+      transition: outline 0.15s;
+    }
+
+    [data-section]::before {
+      content: attr(data-section);
+      position: absolute;
+      top: -1px;
+      left: -1px;
+      background: var(--accent-tertiary);
+      color: #fff;
+      font-size: 8px;
+      padding: 1px 5px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      z-index: 50;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    [data-section]:hover::before { opacity: 1; }
+    [data-section]:hover { outline: 2px solid var(--accent-tertiary); outline-offset: 1px; }
+
+    [data-section].has-comment { outline: 2px solid var(--accent-secondary); outline-offset: 1px; }
+    [data-section].has-comment::before { opacity: 1; background: var(--accent-secondary); color: var(--bg-primary); }
+
+    /* ── Comment badge ── */
+    .comment-badge {
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      width: 16px;
+      height: 16px;
+      background: var(--accent-secondary);
+      color: var(--bg-primary);
+      border-radius: 50%;
+      font-size: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      z-index: 60;
+      pointer-events: none;
+    }
+
+    /* ── Comment input popup ── */
+    .comment-popup {
+      display: none;
+      position: fixed;
+      z-index: 500;
+      background: #141833;
+      border: 1px solid var(--accent-secondary);
+      box-shadow: 0 0 20px rgba(0, 255, 229, 0.25);
+      padding: 12px;
+      width: 320px;
+      border-radius: 6px;
+    }
+
+    .comment-popup.visible { display: block; }
+
+    .comment-popup h4 {
+      font-size: 11px;
+      color: var(--accent-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .comment-popup textarea {
+      width: 100%;
+      height: 80px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 11px;
+      padding: 8px;
+      resize: vertical;
+      border-radius: 3px;
+    }
+
+    .comment-popup textarea:focus { outline: 1px solid var(--accent-secondary); }
+
+    .comment-popup .popup-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      justify-content: flex-end;
+    }
+
+    .comment-popup .popup-actions button {
+      font-size: 11px;
+      padding: 4px 12px;
+    }
+
+    .popup-actions .btn-save { border-color: var(--accent-secondary); color: var(--accent-secondary); }
+    .popup-actions .btn-save:hover { background: var(--accent-secondary); color: var(--bg-primary); box-shadow: 0 0 8px rgba(0,255,229,0.5); }
+    .popup-actions .btn-delete { border-color: var(--color-danger); color: var(--color-danger); }
+    .popup-actions .btn-delete:hover { background: var(--color-danger); color: #fff; box-shadow: 0 0 8px rgba(255,23,68,0.5); }
+    .popup-actions .btn-cancel { border-color: var(--text-secondary); color: var(--text-secondary); }
+
+    /* ── Review panel (right side) ── */
+    .review-panel {
+      background: #0d1130;
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .review-header {
+      padding: 12px 16px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .review-header h2 {
+      font-size: 13px;
+      color: var(--accent-secondary);
+    }
+
+    .review-header .comment-count {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .review-instructions {
+      padding: 10px 16px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .comments-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .comment-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent-secondary);
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .comment-card:hover { border-color: var(--accent-secondary); }
+
+    .comment-card .card-section {
+      font-size: 10px;
+      color: var(--accent-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .comment-card .card-text {
+      font-size: 11px;
+      color: var(--text-primary);
+      line-height: 1.5;
+    }
+
+    .comment-card .card-remove {
+      float: right;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 8px;
+    }
+
+    .comment-card .card-remove:hover { color: var(--color-danger); }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      line-height: 1.8;
+    }
+
+    .empty-state .arrow { font-size: 24px; color: var(--accent-tertiary); margin-bottom: 8px; }
+
+    /* ── Prompt output ── */
+    .prompt-output {
+      border-top: 1px solid var(--border);
+      background: var(--bg-surface);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .prompt-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .prompt-bar h3 {
+      font-size: 11px;
+      color: var(--accent-primary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .prompt-bar .prompt-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .prompt-bar button {
+      font-size: 10px;
+      padding: 3px 10px;
+    }
+
+    .btn-copy { border-color: var(--accent-primary); color: var(--accent-primary); }
+    .btn-copy:hover { background: var(--accent-primary); color: var(--bg-primary); }
+    .btn-copy.copied { background: var(--accent-primary); color: var(--bg-primary); }
+
+    .btn-clear-all { border-color: var(--color-danger); color: var(--color-danger); }
+    .btn-clear-all:hover { background: var(--color-danger); color: #fff; }
+
+    .prompt-text {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      font-size: 11px;
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 80px;
+      max-height: 200px;
+      white-space: pre-wrap;
+      user-select: text;
+    }
+
+    .prompt-text .no-comments {
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="page-layout">
+    <!-- ── Simulator mockup (left) ── -->
+    <div class="simulator-wrap">
+      <div class="app">
+        <header class="header">
+          <h1 data-section="TITLE" title="Agent-based models: simple agent rules → emergent patterns">Simulator</h1>
+          <div class="header-right">
+            <span class="tick-display" id="tick-display" data-section="TICK-DISPLAY">Tick: 247</span>
+            <select id="model-select" data-section="MODEL-SELECTOR">
+              <option selected>Wolf Sheep Predation</option>
+            </select>
+          </div>
+        </header>
+
+        <aside class="controls">
+          <div class="model-context" data-section="MODEL-DESCRIPTION">Classic predator-prey model.
+
+Agent rules:
+&#8226; Wolves chase nearest sheep. Catch one &#8594; gain energy.
+&#8226; Sheep flee wolves. Eat grass &#8594; gain energy.
+&#8226; All agents lose energy each step. Zero energy &#8594; die.
+&#8226; Enough energy &#8594; chance to reproduce.
+&#8226; Grass regrows after a delay.
+
+These simple rules produce emergent oscillations:
+
+sheep  ~~~&#9585;    &#9585;~~~&#9585;    &#9585;~~
+wolves    ~~~&#9585;    &#9585;~~~&#9585;
+
+Sheep boom &#8594; wolves thrive &#8594; sheep crash &#8594; wolves starve &#8594; repeat.</div>
+
+          <div class="button-group" data-section="CONTROL-BUTTONS">
+            <button id="btn-go">Go</button>
+            <button id="btn-step">Step</button>
+            <button id="btn-reset">Reset</button>
+            <button id="btn-defaults">Defaults</button>
+          </div>
+
+          <div data-section="SPEED-SLIDER">
+            <div class="section-label">Speed</div>
+            <div class="slider-row">
+              <label for="speed-slider">Update Rate</label>
+              <input type="range" id="speed-slider" min="1" max="20" step="1" value="1" />
+              <span class="slider-value" id="speed-value">1</span>
+            </div>
+          </div>
+
+          <div class="section-label">Parameters</div>
+          <div id="slider-container" data-section="PARAMETER-SLIDERS">
+            <!-- Dynamically generated from configSchema -->
+          </div>
+
+          <div class="section-label">Population</div>
+          <div class="population-counts" data-section="POPULATION-COUNTS">
+            <span class="pop-wolf">Wolves: 24</span>
+            <span class="pop-sheep">Sheep: 83</span>
+            <span class="pop-grass">Grass: 312</span>
+          </div>
+
+          <button id="btn-download" data-section="DOWNLOAD-BTN">Download CSV</button>
+
+          <div class="attribution" data-section="ATTRIBUTION">
+            Based on NetLogo Wolf Sheep Predation by Uri Wilensky (1997). Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+          </div>
+        </aside>
+
+        <div class="drag-handle" data-section="DRAG-HANDLE"></div>
+
+        <div class="canvas-area" data-section="SIMULATION-CANVAS">
+          <canvas id="sim-canvas" width="800" height="600"></canvas>
+          <div class="agent-inspector-mock" data-section="AGENT-INSPECTOR">
+            <span class="close">&times;</span>
+            <div>
+              <strong style="color:var(--color-wolf)">wolf #7</strong><br/>
+              energy: 42.3<br/>
+              pos: (312, 204)<br/>
+              state: hunting
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-area" data-section="POPULATION-CHART">
+          <canvas id="chart-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Review panel (right) ── -->
+    <div class="review-panel">
+      <div class="review-header">
+        <h2>Review Comments</h2>
+        <span class="comment-count" id="comment-count">0 comments</span>
+      </div>
+      <div class="review-instructions">
+        Click any <span style="color:var(--accent-tertiary)">highlighted section</span> in the simulator to add a comment. Hover to see section names. Your comments auto-generate a prompt below with file references.
+      </div>
+      <div class="comments-list" id="comments-list">
+        <div class="empty-state" id="empty-state">
+          <div class="arrow">&larr;</div>
+          Click any part of the<br>simulator to annotate it<br><br>
+          Sections light up on hover
+        </div>
+      </div>
+
+      <div class="prompt-output">
+        <div class="prompt-bar">
+          <h3>Generated Prompt</h3>
+          <div class="prompt-actions">
+            <button class="btn-clear-all" id="btn-clear-all">Clear All</button>
+            <button class="btn-copy" id="btn-copy">Copy</button>
+          </div>
+        </div>
+        <div class="prompt-text" id="prompt-text">
+          <span class="no-comments">Add comments to sections above to generate a prompt...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Comment popup ── -->
+  <div class="comment-popup" id="comment-popup">
+    <h4 id="popup-title">Comment on SECTION</h4>
+    <textarea id="popup-textarea" placeholder="Describe what you want changed..."></textarea>
+    <div class="popup-actions">
+      <button class="btn-delete" id="popup-delete">Delete</button>
+      <button class="btn-cancel" id="popup-cancel">Cancel</button>
+      <button class="btn-save" id="popup-save">Save</button>
+    </div>
+  </div>
+
+  <script>
+    // ── Config schema from definition.ts (all 16 parameters) ──
+    const configSchema = [
+      { key: 'width', label: 'Width', min: 400, max: 1200, step: 100, default: 800 },
+      { key: 'height', label: 'Height', min: 300, max: 900, step: 100, default: 600 },
+      { key: 'initialWolves', label: 'Initial Wolves', min: 1, max: 200, step: 1, default: 30, info: 'Number of wolves at start' },
+      { key: 'initialSheep', label: 'Initial Sheep', min: 1, max: 200, step: 1, default: 100, info: 'Number of sheep at start' },
+      { key: 'wolfSpeed', label: 'Wolf Speed', min: 0.5, max: 5, step: 0.1, default: 1.8, info: 'How far a wolf moves each step' },
+      { key: 'sheepSpeed', label: 'Sheep Speed', min: 0.5, max: 5, step: 0.1, default: 1.5, info: 'How far a sheep moves each step' },
+      { key: 'wolfGainFromFood', label: 'Wolf Food Gain', min: 1, max: 50, step: 1, default: 20, info: 'Rule: wolf eats sheep \u2192 gains this much energy\nHigher \u2192 wolves survive longer' },
+      { key: 'sheepGainFromFood', label: 'Sheep Food Gain', min: 1, max: 20, step: 1, default: 5, info: 'Rule: sheep eats grass \u2192 gains this much energy\nHigher \u2192 sheep survive longer' },
+      { key: 'moveCost', label: 'Move Cost', min: 0.1, max: 5, step: 0.1, default: 0.5, info: 'Rule: every step costs this much energy\nHigher \u2192 agents starve faster' },
+      { key: 'wolfReproduceThreshold', label: 'Wolf Repro Threshold', min: 10, max: 100, step: 5, default: 60, info: 'Rule: wolf needs this much energy to reproduce\nHigher \u2192 harder to breed' },
+      { key: 'sheepReproduceThreshold', label: 'Sheep Repro Threshold', min: 10, max: 100, step: 5, default: 30, info: 'Rule: sheep needs this much energy to reproduce\nHigher \u2192 harder to breed' },
+      { key: 'wolfReproduceRate', label: 'Wolf Repro Rate', min: 0, max: 0.2, step: 0.01, default: 0.04, info: 'Rule: chance of reproducing each step\nHigher \u2192 faster wolf population growth' },
+      { key: 'sheepReproduceRate', label: 'Sheep Repro Rate', min: 0, max: 0.2, step: 0.01, default: 0.06, info: 'Rule: chance of reproducing each step\nHigher \u2192 faster sheep population growth' },
+      { key: 'grassRegrowthTime', label: 'Grass Regrowth', min: 1, max: 100, step: 1, default: 20, info: 'Rule: eaten grass regrows after this many steps\nHigher \u2192 slower grass recovery' },
+      { key: 'grassGridSize', label: 'Grass Grid Size', min: 10, max: 40, step: 1, default: 20, info: 'Grid resolution (N\u00d7N patches)\nHigher \u2192 more detailed grass landscape' },
+      { key: 'catchRadius', label: 'Catch Radius', min: 5, max: 30, step: 1, default: 8, info: 'Rule: wolf catches sheep within this distance\nHigher \u2192 easier to catch' },
+      { key: 'fleeRadius', label: 'Flee Radius', min: 10, max: 80, step: 1, default: 50, info: 'Rule: sheep detects wolf within this distance\nHigher \u2192 sheep flee earlier' },
+    ];
+
+    const toggles = [
+      { key: 'showEnergy', label: 'Show Energy', default: false },
+      { key: 'showGrass', label: 'Show Grass', default: true },
+    ];
+
+    // ── Section-to-file mapping (from section-map.md) ──
+    const sectionFiles = {
+      'TITLE': ['sim/index.html'],
+      'TICK-DISPLAY': ['sim/index.html', 'sim/src/main.ts'],
+      'MODEL-SELECTOR': ['sim/index.html', 'sim/src/main.ts', 'sim/src/framework/model-registry.ts'],
+      'MODEL-DESCRIPTION': ['sim/index.html', 'sim/src/models/wolf-sheep/definition.ts'],
+      'CONTROL-BUTTONS': ['sim/index.html', 'sim/src/framework/controls.ts'],
+      'SPEED-SLIDER': ['sim/index.html', 'sim/src/main.ts'],
+      'PARAMETER-SLIDERS': ['sim/src/models/wolf-sheep/definition.ts', 'sim/src/framework/slider-factory.ts'],
+      'POPULATION-COUNTS': ['sim/src/main.ts', 'sim/src/framework/stats-overlay.ts'],
+      'DOWNLOAD-BTN': ['sim/src/framework/csv-export.ts'],
+      'ATTRIBUTION': ['sim/index.html'],
+      'SIMULATION-CANVAS': ['sim/src/framework/canvas-renderer.ts', 'sim/src/models/wolf-sheep/world.ts'],
+      'POPULATION-CHART': ['sim/src/framework/stats-overlay.ts'],
+      'AGENT-INSPECTOR': ['sim/src/main.ts', 'sim/index.html'],
+      'DRAG-HANDLE': ['sim/index.html', 'sim/src/main.ts'],
+    };
+
+    // ── Render all 16 parameter sliders + toggles ──
+    const sliderContainer = document.getElementById('slider-container');
+    configSchema.forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'slider-row';
+      const infoHtml = p.info
+        ? `<span class="info-wrapper"><span class="info-icon">\u24d8</span><span class="info-tooltip">${p.info}</span></span>`
+        : '';
+      row.innerHTML = `
+        <label>${p.label} ${infoHtml}</label>
+        <input type="range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.default}" />
+        <span class="slider-value">${p.default}</span>
+      `;
+      const slider = row.querySelector('input[type="range"]');
+      const valSpan = row.querySelector('.slider-value');
+      slider.addEventListener('input', () => { valSpan.textContent = slider.value; });
+      sliderContainer.appendChild(row);
+    });
+
+    toggles.forEach(t => {
+      const row = document.createElement('div');
+      row.className = 'toggle-row';
+      row.style.marginTop = '8px';
+      row.innerHTML = `
+        <input type="checkbox" id="toggle-${t.key}" ${t.default ? 'checked' : ''} />
+        <label for="toggle-${t.key}">${t.label}</label>
+      `;
+      sliderContainer.appendChild(row);
+    });
+
+    // ── State ──
+    const comments = {};
+    let activeSection = null;
+
+    const popup = document.getElementById('comment-popup');
+    const popupTitle = document.getElementById('popup-title');
+    const popupTextarea = document.getElementById('popup-textarea');
+    const commentsList = document.getElementById('comments-list');
+    const emptyState = document.getElementById('empty-state');
+    const promptText = document.getElementById('prompt-text');
+    const commentCount = document.getElementById('comment-count');
+
+    // ── Section descriptions for prompt context ──
+    const sectionDescriptions = {
+      'TITLE': 'the app title in the header',
+      'TICK-DISPLAY': 'the tick counter display in the header',
+      'MODEL-SELECTOR': 'the model selection dropdown in the header',
+      'MODEL-DESCRIPTION': 'the model description/context text in the sidebar',
+      'CONTROL-BUTTONS': 'the control buttons (Go, Step, Reset, Defaults)',
+      'SPEED-SLIDER': 'the update rate / speed slider',
+      'PARAMETER-SLIDERS': 'the 16 parameter sliders and 2 toggles (Width, Height, Initial Wolves, Initial Sheep, Wolf Speed, Sheep Speed, Wolf Food Gain, Sheep Food Gain, Move Cost, Wolf Repro Threshold, Sheep Repro Threshold, Wolf Repro Rate, Sheep Repro Rate, Grass Regrowth, Grass Grid Size, Catch Radius, Flee Radius, Show Energy, Show Grass)',
+      'POPULATION-COUNTS': 'the live population count badges (Wolves, Sheep, Grass)',
+      'DOWNLOAD-BTN': 'the Download CSV button',
+      'ATTRIBUTION': 'the attribution / credits text at the bottom of the sidebar',
+      'SIMULATION-CANVAS': 'the main simulation canvas where agents are rendered',
+      'POPULATION-CHART': 'the population history line chart at the bottom',
+      'AGENT-INSPECTOR': 'the agent inspector popup that appears when clicking an agent on canvas',
+      'DRAG-HANDLE': 'the draggable resize handle between sidebar and canvas',
+    };
+
+    // ── Section click → open popup ──
+    document.querySelectorAll('[data-section]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'SELECT' || tag === 'OPTION') return;
+
+        e.stopPropagation();
+        const section = el.dataset.section;
+        activeSection = section;
+
+        popupTitle.textContent = section;
+        popupTextarea.value = comments[section] || '';
+
+        const rect = el.getBoundingClientRect();
+        let top = Math.min(rect.top, window.innerHeight - 200);
+        let left = rect.right + 10;
+        if (left + 330 > window.innerWidth - 390) {
+          left = rect.left - 330;
+        }
+        if (left < 10) left = 10;
+        if (top < 10) top = 10;
+
+        popup.style.top = top + 'px';
+        popup.style.left = left + 'px';
+        popup.classList.add('visible');
+        popupTextarea.focus();
+
+        document.getElementById('popup-delete').style.display = comments[section] ? '' : 'none';
+      });
+    });
+
+    // ── Popup actions ──
+    document.getElementById('popup-save').addEventListener('click', () => {
+      const text = popupTextarea.value.trim();
+      if (text && activeSection) {
+        comments[activeSection] = text;
+        markSection(activeSection, true);
+      }
+      closePopup();
+      renderCommentsList();
+      updatePrompt();
+    });
+
+    document.getElementById('popup-delete').addEventListener('click', () => {
+      if (activeSection) {
+        delete comments[activeSection];
+        markSection(activeSection, false);
+      }
+      closePopup();
+      renderCommentsList();
+      updatePrompt();
+    });
+
+    document.getElementById('popup-cancel').addEventListener('click', closePopup);
+
+    popupTextarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('popup-save').click();
+      }
+      if (e.key === 'Escape') closePopup();
+    });
+
+    document.addEventListener('click', (e) => {
+      if (popup.classList.contains('visible') && !popup.contains(e.target) && !e.target.closest('[data-section]')) {
+        closePopup();
+      }
+    });
+
+    function closePopup() {
+      popup.classList.remove('visible');
+      activeSection = null;
+    }
+
+    function markSection(section, hasComment) {
+      const el = document.querySelector(`[data-section="${section}"]`);
+      if (!el) return;
+      el.classList.toggle('has-comment', hasComment);
+      const old = el.querySelector('.comment-badge');
+      if (old) old.remove();
+      if (hasComment) {
+        const badge = document.createElement('span');
+        badge.className = 'comment-badge';
+        badge.textContent = '\u2713';
+        el.appendChild(badge);
+      }
+    }
+
+    // ── Render comments list ──
+    function renderCommentsList() {
+      const keys = Object.keys(comments);
+      const count = keys.length;
+      commentCount.textContent = count + ' comment' + (count !== 1 ? 's' : '');
+
+      if (count === 0) {
+        emptyState.style.display = '';
+        commentsList.querySelectorAll('.comment-card').forEach(c => c.remove());
+        return;
+      }
+
+      emptyState.style.display = 'none';
+      commentsList.querySelectorAll('.comment-card').forEach(c => c.remove());
+
+      keys.forEach(section => {
+        const card = document.createElement('div');
+        card.className = 'comment-card';
+        card.innerHTML = `
+          <span class="card-remove" data-section="${section}">&times;</span>
+          <div class="card-section">${section}</div>
+          <div class="card-text">${escapeHtml(comments[section])}</div>
+        `;
+        card.addEventListener('click', (e) => {
+          if (e.target.classList.contains('card-remove')) {
+            delete comments[section];
+            markSection(section, false);
+            renderCommentsList();
+            updatePrompt();
+            return;
+          }
+          const el = document.querySelector(`[data-section="${section}"]`);
+          if (el) el.click();
+        });
+        commentsList.appendChild(card);
+      });
+    }
+
+    function escapeHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Generate prompt with file references ──
+    function updatePrompt() {
+      const keys = Object.keys(comments);
+      if (keys.length === 0) {
+        promptText.innerHTML = '<span class="no-comments">Add comments to sections above to generate a prompt...</span>';
+        return;
+      }
+
+      const lines = [];
+      lines.push('I want to make the following changes to the ABM Simulator interface.\n');
+
+      keys.forEach((section, i) => {
+        const desc = sectionDescriptions[section] || section.toLowerCase();
+        const files = sectionFiles[section] || [];
+        lines.push(`## ${section}`);
+        lines.push(`Files: ${files.join(', ')}`);
+        lines.push(`(${desc})\n`);
+        lines.push(`- ${comments[section]}\n`);
+      });
+
+      lines.push('Please read the relevant source files first before making edits.');
+
+      promptText.textContent = lines.join('\n');
+    }
+
+    // ── Copy button ──
+    document.getElementById('btn-copy').addEventListener('click', () => {
+      const text = promptText.textContent;
+      if (!text || text.includes('Add comments to')) return;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('btn-copy');
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+      });
+    });
+
+    // ── Clear all ──
+    document.getElementById('btn-clear-all').addEventListener('click', () => {
+      Object.keys(comments).forEach(s => {
+        markSection(s, false);
+        delete comments[s];
+      });
+      renderCommentsList();
+      updatePrompt();
+    });
+
+    // ── Go button toggle ──
+    const btnGo = document.getElementById('btn-go');
+    let running = false;
+    btnGo.addEventListener('click', () => {
+      running = !running;
+      btnGo.textContent = running ? 'Stop' : 'Go';
+      btnGo.classList.toggle('active', running);
+    });
+
+    // ── Speed slider live value ──
+    document.getElementById('speed-slider').addEventListener('input', (e) => {
+      document.getElementById('speed-value').textContent = e.target.value;
+    });
+
+    // ── Draw fake simulation canvas ──
+    function drawSimulation() {
+      const canvas = document.getElementById('sim-canvas');
+      const ctx = canvas.getContext('2d');
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      const W = rect.width, H = rect.height;
+
+      let seed = 42;
+      function rand() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+
+      // Grass grid (20x20)
+      const gs = 20;
+      const cellW = W / gs, cellH = H / gs;
+      for (let r = 0; r < gs; r++) {
+        for (let c = 0; c < gs; c++) {
+          ctx.fillStyle = rand() > 0.3 ? '#2a5a20' : '#1a1200';
+          ctx.fillRect(c * cellW, r * cellH, cellW + 0.5, cellH + 0.5);
+        }
+      }
+
+      // Sheep (83)
+      for (let i = 0; i < 83; i++) {
+        ctx.beginPath();
+        ctx.arc(rand() * W, rand() * H, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#affff7';
+        ctx.fill();
+      }
+
+      // Wolves (24)
+      for (let i = 0; i < 24; i++) {
+        ctx.beginPath();
+        ctx.arc(rand() * W, rand() * H, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff2daa';
+        ctx.fill();
+      }
+    }
+
+    // ── Draw fake population chart ──
+    function drawChart() {
+      const chartCanvas = document.getElementById('chart-canvas');
+      const rect = chartCanvas.parentElement.getBoundingClientRect();
+      chartCanvas.width = rect.width * devicePixelRatio;
+      chartCanvas.height = rect.height * devicePixelRatio;
+      chartCanvas.style.width = rect.width + 'px';
+      chartCanvas.style.height = rect.height + 'px';
+      const ctx = chartCanvas.getContext('2d');
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      const W = rect.width, H = rect.height;
+      const pad = { left: 50, right: 20, top: 20, bottom: 30 };
+      const plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
+
+      ctx.fillStyle = '#0a0e27';
+      ctx.fillRect(0, 0, W, H);
+
+      // Grid lines
+      ctx.strokeStyle = '#2d356140'; ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (plotH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+      }
+
+      // Y-axis labels
+      ctx.fillStyle = '#7da4bc'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+      const maxY = 200;
+      for (let i = 0; i <= 4; i++) {
+        ctx.fillText(Math.round(maxY - (maxY/4)*i).toString(), pad.left - 6, pad.top + (plotH/4)*i + 3);
+      }
+
+      // X-axis labels
+      ctx.textAlign = 'center';
+      const ticks = 250;
+      for (let t = 0; t <= ticks; t += 50) {
+        ctx.fillText(t.toString(), pad.left + (t/ticks)*plotW, H - pad.bottom + 16);
+      }
+
+      // Oscillating population lines
+      function genLine(base, amp, freq, phase) {
+        const pts = [];
+        for (let i = 0; i <= ticks; i++) {
+          pts.push(Math.max(0, base + Math.sin(i * freq + phase) * amp + Math.sin(i * freq * 2.3 + phase) * (amp * 0.3)));
+        }
+        return pts;
+      }
+
+      function drawLine(data, color) {
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.beginPath();
+        for (let i = 0; i <= ticks; i++) {
+          const x = pad.left + (i/ticks) * plotW;
+          const y = pad.top + plotH - (data[i]/maxY) * plotH;
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+      }
+
+      drawLine(genLine(90, 40, 0.025, 0), '#affff7');      // sheep
+      drawLine(genLine(30, 15, 0.025, -1.2), '#ff2daa');    // wolves
+
+      // Legend
+      const legend = [{l:'Wolves',c:'#ff2daa'},{l:'Sheep',c:'#affff7'},{l:'Grass',c:'#66ff55'}];
+      let lx = pad.left + 10;
+      ctx.font = '10px monospace';
+      legend.forEach(item => {
+        ctx.fillStyle = item.c; ctx.fillRect(lx, pad.top - 12, 12, 8);
+        ctx.fillStyle = '#7da4bc'; ctx.textAlign = 'left'; ctx.fillText(item.l, lx + 16, pad.top - 4);
+        lx += 80;
+      });
+    }
+
+    // ── Init ──
+    window.addEventListener('load', () => {
+      drawSimulation();
+      drawChart();
+    });
+    window.addEventListener('resize', () => {
+      drawSimulation();
+      drawChart();
+    });
+
+    // ── Reset button ──
+    document.getElementById('btn-reset').addEventListener('click', () => {
+      running = false;
+      btnGo.textContent = 'Go';
+      btnGo.classList.remove('active');
+      document.getElementById('tick-display').textContent = 'Tick: 0';
+      drawSimulation();
+    });
+  </script>
+</body>
+</html>

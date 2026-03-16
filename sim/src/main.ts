@@ -145,7 +145,9 @@ modelSelect.addEventListener('change', () => {
 
 // Speed slider
 speedSlider.addEventListener('input', () => {
-  speedValue.textContent = speedSlider.value;
+  const val = speedSlider.value;
+  speedValue.textContent = val;
+  speedSlider.setAttribute('aria-valuetext', `${val}x speed`);
 });
 
 // CSV download
@@ -157,6 +159,89 @@ downloadBtn.addEventListener('click', () => {
 inspectorClose.addEventListener('click', () => {
   inspectorEl.style.display = 'none';
 });
+
+// Drag handle for sidebar resizing
+const dragHandle = document.getElementById('drag-handle')!;
+const appEl = document.querySelector('.app') as HTMLElement;
+let isDragging = false;
+
+dragHandle.addEventListener('mousedown', () => {
+  isDragging = true;
+  dragHandle.classList.add('dragging');
+  document.body.style.cursor = 'col-resize';
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const minWidth = 200;
+  const maxWidth = 500;
+  const newWidth = Math.min(maxWidth, Math.max(minWidth, e.clientX));
+  appEl.style.gridTemplateColumns = `${newWidth}px 4px 1fr`;
+  dragHandle.setAttribute('aria-valuenow', String(newWidth));
+});
+
+document.addEventListener('mouseup', () => {
+  if (!isDragging) return;
+  isDragging = false;
+  dragHandle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  resizeChart();
+});
+
+// Drag handle keyboard support
+dragHandle.addEventListener('keydown', (e) => {
+  const step = 20;
+  const cols = appEl.style.gridTemplateColumns;
+  const currentWidth = parseInt(cols) || 280;
+  let newWidth = currentWidth;
+
+  if (e.key === 'ArrowLeft') newWidth = Math.max(200, currentWidth - step);
+  else if (e.key === 'ArrowRight') newWidth = Math.min(500, currentWidth + step);
+  else return;
+
+  e.preventDefault();
+  appEl.style.gridTemplateColumns = `${newWidth}px 4px 1fr`;
+  dragHandle.setAttribute('aria-valuenow', String(newWidth));
+  resizeChart();
+});
+
+// Drag handle touch support
+dragHandle.addEventListener('touchstart', (e) => {
+  isDragging = true;
+  dragHandle.classList.add('dragging');
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (!isDragging) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  const minWidth = 200;
+  const maxWidth = 500;
+  const newWidth = Math.min(maxWidth, Math.max(minWidth, touch.clientX));
+  appEl.style.gridTemplateColumns = `${newWidth}px 4px 1fr`;
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  if (!isDragging) return;
+  isDragging = false;
+  dragHandle.classList.remove('dragging');
+  resizeChart();
+});
+
+// Cancel drag on blur/visibility change
+function cancelDrag(): void {
+  if (!isDragging) return;
+  isDragging = false;
+  dragHandle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+}
+
+window.addEventListener('blur', cancelDrag);
+document.addEventListener('visibilitychange', cancelDrag);
 
 // Resize chart canvas
 function resizeChart(): void {
@@ -213,6 +298,16 @@ function loop(): void {
     popSheep.textContent = `Sheep: ${counts['sheep'] ?? 0}`;
     popGrass.textContent = `Grass: ${counts['grass'] ?? 0}`;
     lastRenderedTick = world.tick;
+  }
+
+  // Disable step button while running
+  const stepBtn = document.getElementById('btn-step');
+  if (stepBtn) {
+    if (world.running) {
+      stepBtn.setAttribute('disabled', '');
+    } else {
+      stepBtn.removeAttribute('disabled');
+    }
   }
 
   animationHandle = requestAnimationFrame(loop);

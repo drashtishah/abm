@@ -49,7 +49,7 @@ export const wolfSheepDef: ModelDefinition = {
     { key: 'seed', label: 'Random Seed', min: 0, max: 99999, step: 1, default: 0, info: 'Seed for reproducible runs. 0 = random each time.', tier: 'advanced' },
   ],
   agentTypes: [
-    { type: 'wolf', color: '#ff2daa', radius: 4, shape: 'circle' },
+    { type: 'wolf', color: '#ff2daa', radius: 4, shape: 'triangle' },
     { type: 'sheep', color: '#affff7', radius: 3, shape: 'circle' },
   ],
   toggles: [

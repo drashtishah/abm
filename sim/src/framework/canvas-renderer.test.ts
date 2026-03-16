@@ -14,6 +14,7 @@ function makeCtx() {
     fillRect: vi.fn(),
     lineTo: vi.fn(),
     moveTo: vi.fn(),
+    closePath: vi.fn(),
     stroke: vi.fn(),
     fillStyle: '',
     strokeStyle: '',
@@ -143,6 +144,31 @@ describe('canvas-renderer', () => {
 
     // Only the background clear call, no grass patches
     expect(ctx.fillRect).toHaveBeenCalledTimes(1);
+  });
+
+  it('render draws triangle for triangle-shaped agents', () => {
+    const ctx = makeCtx();
+    const triangleModel: ModelDefinition = {
+      ...model,
+      agentTypes: [
+        { type: 'wolf', color: '#ff4444', radius: 5, shape: 'triangle' },
+        { type: 'sheep', color: '#ffffff', radius: 4, shape: 'circle' },
+      ],
+    };
+    const agents = [
+      { id: 1, type: 'wolf', x: 100, y: 100, vx: 0, vy: 0, radius: 5, speed: 1, energy: 10, color: '#ff4444', alive: true, meta: {} },
+      { id: 2, type: 'sheep', x: 200, y: 200, vx: 0, vy: 0, radius: 4, speed: 1, energy: 10, color: '#ffffff', alive: true, meta: {} },
+    ];
+    const world = makeWorld({ agents, config: { width: 800, height: 600 } });
+
+    render(ctx, world, triangleModel);
+
+    // Wolf is a triangle: moveTo + 2x lineTo + closePath, no arc
+    expect(ctx.moveTo).toHaveBeenCalled();
+    expect(ctx.lineTo).toHaveBeenCalledTimes(2);
+    expect(ctx.closePath).toHaveBeenCalled();
+    // Sheep is a circle: 1 arc call
+    expect(ctx.arc).toHaveBeenCalledTimes(1);
   });
 
   it('render skips dead agents', () => {

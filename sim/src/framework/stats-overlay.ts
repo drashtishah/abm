@@ -1,5 +1,6 @@
 import type { World } from './types.js';
 import type { ModelDefinition } from './model-registry.js';
+import { getThemeColors } from './theme.js';
 
 export function renderStats(
   ctx: CanvasRenderingContext2D,
@@ -22,7 +23,8 @@ export function renderStats(
   }
 
   // Draw tick counter
-  ctx.fillStyle = '#7da4bc';
+  const statsTheme = getThemeColors();
+  ctx.fillStyle = statsTheme.textSecondary ?? '#7da4bc';
   ctx.fillText(`Tick: ${world.tick}`, 12, y);
 }
 
@@ -35,7 +37,8 @@ export function renderChart(
   const h = ctx.canvas.height;
 
   // Background
-  ctx.fillStyle = '#0a0e27';
+  const chartTheme = getThemeColors();
+  ctx.fillStyle = chartTheme.bgPrimary ?? '#0a0e27';
   ctx.fillRect(0, 0, w, h);
 
   const history = world.populationHistory;
@@ -70,7 +73,7 @@ export function renderChart(
   const chartH = h - marginTop - marginBottom;
 
   // Draw grid lines
-  ctx.strokeStyle = '#2d3561';
+  ctx.strokeStyle = chartTheme.border ?? '#2d3561';
   ctx.lineWidth = 1;
   const numGridLines = 4;
   for (let i = 0; i <= numGridLines; i++) {
@@ -82,7 +85,7 @@ export function renderChart(
 
     // Y axis labels
     const labelVal = Math.round(maxVal * (1 - i / numGridLines));
-    ctx.fillStyle = '#7da4bc';
+    ctx.fillStyle = chartTheme.textSecondary ?? '#7da4bc';
     ctx.font = '11px "JetBrains Mono", monospace';
     ctx.fillText(String(labelVal), 4, gy + 4);
   }
@@ -92,7 +95,7 @@ export function renderChart(
   const tickEnd = startIdx + visible.length;
   for (let t = Math.ceil(tickStart / 100) * 100; t < tickEnd; t += 100) {
     const xPos = marginLeft + ((t - tickStart) / Math.max(visible.length - 1, 1)) * chartW;
-    ctx.fillStyle = '#7da4bc';
+    ctx.fillStyle = chartTheme.textSecondary ?? '#7da4bc';
     ctx.fillText(String(t), xPos - 10, h - 5);
   }
 
@@ -102,7 +105,10 @@ export function renderChart(
     lineColors[at.type] = at.color;
   }
   // Default grass color
-  if (!lineColors['grass']) lineColors['grass'] = '#66ff55';
+  if (!lineColors['grass']) {
+    const theme = getThemeColors();
+    lineColors['grass'] = theme.accentPrimary ?? '#66ff55';
+  }
 
   // Draw lines
   for (const key of keys) {

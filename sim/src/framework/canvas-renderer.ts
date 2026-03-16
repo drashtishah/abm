@@ -1,5 +1,6 @@
 import type { World } from './types.js';
 import type { ModelDefinition } from './model-registry.js';
+import { getThemeColors } from './theme.js';
 
 interface GrassPatch {
   alive: boolean;
@@ -7,19 +8,6 @@ interface GrassPatch {
 
 function isGrassState(s: unknown): s is { grass: GrassPatch[] } {
   return s !== null && typeof s === 'object' && 'grass' in s;
-}
-
-let cachedColors: Record<string, string> | null = null;
-
-function getThemeColors(): Record<string, string> {
-  if (cachedColors) return cachedColors;
-  const style = getComputedStyle(document.documentElement);
-  cachedColors = {
-    bgPrimary: style.getPropertyValue('--bg-primary').trim() || '#0a0e27',
-    grassAlive: style.getPropertyValue('--color-grass').trim() || '#2a5a20',
-    grassEaten: style.getPropertyValue('--color-grass-eaten').trim() || '#1a1200',
-  };
-  return cachedColors;
 }
 
 export function render(
@@ -35,7 +23,7 @@ export function render(
   ctx.fillRect(0, 0, w, h);
 
   // Draw grass grid if present
-  if (isGrassState(world.extraState)) {
+  if (isGrassState(world.extraState) && world.config['showGrass'] !== 0) {
     const grass = world.extraState.grass;
     const gridSize = world.config['grassGridSize'] ?? 20;
     const cellW = w / gridSize;

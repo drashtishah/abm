@@ -54,13 +54,16 @@ describe('stress tests', () => {
   });
 
   it('Lotka-Volterra oscillation emerges', () => {
-    const world = createWorld();
+    // Key signature of Lotka-Volterra dynamics:
+    // 1. Both populations oscillate (not monotonic, not flat)
+    // 2. Wolf peaks lag behind sheep peaks (predator follows prey)
+    // 3. Both species survive for a significant portion of the run
+    //    (Note: eventual extinction is possible with stochastic models)
+    const world = createWorld({ seed: 42 });
     for (let i = 0; i < 500; i++) {
       world.step();
     }
 
-    // Check that population has variation — not monotonic
-    // Use sheep population as it's more volatile
     const sheepPops = world.populationHistory.map(h => h['sheep'] ?? 0);
     const wolfPops = world.populationHistory.map(h => h['wolves'] ?? 0);
 
@@ -73,6 +76,12 @@ describe('stress tests', () => {
     // Population range should be significant
     expect(maxSheep - minSheep).toBeGreaterThan(10);
     expect(maxWolf - minWolf).toBeGreaterThan(5);
+
+    // 3. Both species should be alive for a meaningful portion (>20% of ticks)
+    const wolfAlive = wolfPops.filter(n => n > 0).length;
+    const sheepAlive = sheepPops.filter(n => n > 0).length;
+    expect(wolfAlive / wolfPops.length).toBeGreaterThan(0.2);
+    expect(sheepAlive / sheepPops.length).toBeGreaterThan(0.2);
   });
 
   it('grass regrows after being eaten', () => {

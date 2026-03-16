@@ -37,9 +37,9 @@ export abstract class BaseWorld implements World {
   }
 
   protected recordPopulation(): void {
-    const maxHistory = 500;
+    const maxHistory = this.config['historyLimit'] ?? 500;
     this.populationHistory.push(this.getPopulationCounts());
-    if (this.populationHistory.length > maxHistory) {
+    if (Number.isFinite(maxHistory) && this.populationHistory.length > maxHistory) {
       this.populationHistory.shift();
     }
     this.tick++;

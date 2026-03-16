@@ -116,6 +116,24 @@ describe('stress tests', () => {
     expect(world.tick).toBe(600);
   });
 
+  it('historyLimit config controls cap', () => {
+    const world = createWorld({ historyLimit: 100 });
+    for (let i = 0; i < 150; i++) {
+      world.step();
+    }
+    expect(world.populationHistory.length).toBeLessThanOrEqual(100);
+    expect(world.tick).toBe(150);
+  });
+
+  it('historyLimit Infinity keeps all history', () => {
+    const world = createWorld({ historyLimit: Infinity });
+    for (let i = 0; i < 600; i++) {
+      world.step();
+    }
+    expect(world.populationHistory.length).toBe(600);
+    expect(world.tick).toBe(600);
+  });
+
   it('build produces valid dist', { timeout: 30000 }, async () => {
     const { execSync } = await import('child_process');
     const { existsSync, readFileSync } = await import('fs');

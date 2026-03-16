@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ABM Science Reports</title>
+  <style>
+    :root { --bg: #0a0a0f; --surface: #14141f; --border: #2a2a3a; --text: #e0e0e8; --accent: #4a90d9; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 800px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 1rem; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .model-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+    .model-card h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>ABM Simulator — Science Reports</h1>
+  <p>Automated parameter analysis for agent-based models.</p>
+  {% for model in models %}
+  <div class="model-card">
+    <h2><a href="{{ model.id }}/report.html">{{ model.name }}</a></h2>
+    <p>{{ model.description }}</p>
+  </div>
+  {% endfor %}
+</body>
+</html>

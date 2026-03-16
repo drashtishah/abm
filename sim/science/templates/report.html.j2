@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ model_name }} — Science Report</title>
+  <style>
+    :root { --bg: #0a0a0f; --surface: #14141f; --border: #2a2a3a; --text: #e0e0e8; --accent: #4a90d9; --muted: #888; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem; max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    h2 { font-size: 1.4rem; margin: 2rem 0 1rem; color: var(--accent); border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
+    .meta { color: var(--muted); margin-bottom: 2rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; }
+    .plot { max-width: 100%; border-radius: 4px; margin: 1rem 0; }
+    table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+    th, td { padding: 0.5rem 1rem; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--accent); font-weight: 600; }
+    .changed { color: #4ad94a; font-weight: 600; }
+    .score { font-size: 2rem; font-weight: 700; color: var(--accent); }
+    a { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <h1>{{ model_name }}</h1>
+  <p class="meta">Generated {{ date }}</p>
+
+  {% if pattern %}
+  <div class="card">
+    <h3>Expected Pattern</h3>
+    <p><strong>{{ pattern.type }}</strong>: {{ pattern.description }}</p>
+    <p>Populations: {{ pattern.populations | join(', ') }} | Min ticks: {{ pattern.minTicks }}</p>
+  </div>
+  {% endif %}
+
+  {% if phase1 %}
+  <h2>Phase 1: Morris Screening</h2>
+  <div class="card">
+    <p>{{ phase1.total_runs }} simulations ({{ phase1.n_trajectories }} trajectories x {{ phase1.n_replicates }} replicates)</p>
+    {% if phase1_plot %}<img class="plot" src="{{ phase1_plot }}" alt="Morris screening bar chart">{% endif %}
+    <h3>Parameter Ranking</h3>
+    <table>
+      <tr><th>Parameter</th><th>mu* (influence)</th><th>sigma (interaction)</th></tr>
+      {% for p in phase1.ranked_params %}
+      <tr><td>{{ p.name }}</td><td>{{ "%.4f" | format(p.mu_star) }}</td><td>{{ "%.4f" | format(p.sigma) }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {% if phase2 %}
+  <h2>Phase 2: Sobol Sensitivity</h2>
+  <div class="card">
+    <p>{{ phase2.total_runs }} simulations ({{ phase2.total_sample_points }} samples x {{ phase2.n_replicates }} replicates)</p>
+    {% if phase2_sobol_plot %}<img class="plot" src="{{ phase2_sobol_plot }}" alt="Sobol sensitivity indices">{% endif %}
+    {% if phase2_heatmap %}<img class="plot" src="{{ phase2_heatmap }}" alt="Parameter interaction heatmap">{% endif %}
+    <h3>Sensitivity Indices</h3>
+    <table>
+      <tr><th>Parameter</th><th>S1 (first-order)</th><th>ST (total-order)</th></tr>
+      {% for name, idx in phase2.indices.items() %}
+      <tr><td>{{ name }}</td><td>{{ "%.4f" | format(idx.S1) }}</td><td>{{ "%.4f" | format(idx.ST) }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {% if phase3 %}
+  <h2>Phase 3: Optimization</h2>
+  <div class="card">
+    <p class="score">Score: {{ phase3.best_score }}</p>
+    <p>{{ phase3.total_runs }} simulations ({{ phase3.total_evaluations }} evaluations x 10 replicates)</p>
+    {% if phase3_plot %}<img class="plot" src="{{ phase3_plot }}" alt="Optimization convergence">{% endif %}
+    <h3>Optimized vs Default</h3>
+    <table>
+      <tr><th>Parameter</th><th>Default</th><th>Optimized</th></tr>
+      {% for name, comp in phase3.comparison_with_defaults.items() %}
+      <tr>
+        <td>{{ name }}</td>
+        <td>{{ comp.default }}</td>
+        <td class="{{ 'changed' if comp.changed else '' }}">{{ comp.optimized }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  {% if journal_link %}<p><a href="{{ journal_link }}">Full Science Journal</a></p>{% endif %}
+</body>
+</html>

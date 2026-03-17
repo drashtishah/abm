@@ -8,6 +8,8 @@ import { setupControls } from './framework/controls.js';
 import { createSliders } from './framework/slider-factory.js';
 import { exportCSV } from './framework/csv-export.js';
 import { renderContextHTML } from './framework/context-renderer.js';
+import './framework/themes/index.js';
+import { listThemes, applyTheme, getSavedThemeId } from './framework/themes/theme-registry.js';
 
 let currentModel: ModelDefinition;
 let world: World;
@@ -355,6 +357,45 @@ if (models[0]) {
   modelSelect.value = models[0].id;
   loadModel(models[0].id);
 }
+
+// Settings dropdown
+const settingsBtn = document.getElementById('btn-settings')!;
+const settingsDropdown = document.getElementById('settings-dropdown')!;
+const themeListEl = document.getElementById('theme-list')!;
+
+function populateThemeList(): void {
+  themeListEl.textContent = '';
+  const currentId = getSavedThemeId();
+  for (const theme of listThemes()) {
+    const el = document.createElement('div');
+    el.className = 'theme-option' + (theme.id === currentId ? ' active' : '');
+    el.textContent = theme.name;
+    el.setAttribute('role', 'menuitem');
+    el.setAttribute('data-theme-id', theme.id);
+    el.addEventListener('click', () => {
+      applyTheme(theme.id);
+      populateThemeList();
+    });
+    themeListEl.appendChild(el);
+  }
+}
+
+settingsBtn.addEventListener('click', () => {
+  const isOpen = settingsDropdown.classList.toggle('open');
+  settingsBtn.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) populateThemeList();
+});
+
+// Close dropdown on outside click
+document.addEventListener('click', (e) => {
+  if (!(e.target as Element).closest('.settings-wrapper')) {
+    settingsDropdown.classList.remove('open');
+    settingsBtn.setAttribute('aria-expanded', 'false');
+  }
+});
+
+// Apply saved theme on startup
+applyTheme(getSavedThemeId());
 
 // Animation loop
 function loop(): void {

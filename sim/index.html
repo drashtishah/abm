@@ -212,7 +212,7 @@
     }
 
     button:hover:not(:disabled) {
-      box-shadow: 0 0 8px #66ff5580;
+      box-shadow: 0 0 8px color-mix(in srgb, var(--accent-primary) 50%, transparent);
     }
 
     button:disabled {
@@ -391,7 +391,7 @@
       padding: 10px;
       font-size: 11px;
       z-index: 100;
-      box-shadow: 0 0 12px rgba(0, 255, 229, 0.3);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--accent-secondary) 30%, transparent);
       max-width: 200px;
     }
 
@@ -427,6 +427,80 @@
       display: flex;
       align-items: center;
       gap: 4px;
+    }
+
+    .settings-wrapper {
+      position: relative;
+    }
+
+    .settings-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      width: 28px;
+      height: 28px;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+    }
+
+    .settings-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--text-secondary);
+      box-shadow: none;
+    }
+
+    .settings-dropdown {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 4px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      min-width: 160px;
+      z-index: 200;
+    }
+
+    .settings-dropdown.open {
+      display: block;
+    }
+
+    .settings-title {
+      color: var(--text-primary);
+      font-size: 12px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 6px;
+      margin-bottom: 6px;
+    }
+
+    .settings-section-label {
+      color: var(--text-secondary);
+      font-size: 10px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .theme-option {
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--text-secondary);
+      border-radius: 3px;
+    }
+
+    .theme-option:hover {
+      background: var(--bg-primary);
+    }
+
+    .theme-option.active {
+      color: var(--accent-primary);
+      background: transparent;
     }
 
     @media (min-width: 769px) and (max-width: 1024px) {
@@ -487,6 +561,14 @@
       <div class="header-right">
         <span class="tick-display" id="tick-display">Tick: 0</span>
         <select id="model-select" aria-label="Select simulation model"></select>
+        <div class="settings-wrapper">
+          <button id="btn-settings" class="settings-btn" aria-label="Settings" aria-expanded="false">&#9881;</button>
+          <div class="settings-dropdown" id="settings-dropdown" role="menu">
+            <div class="settings-title">Settings</div>
+            <div class="settings-section-label">Theme</div>
+            <div id="theme-list" role="group" aria-label="Theme selection"></div>
+          </div>
+        </div>
       </div>
     </header>
 

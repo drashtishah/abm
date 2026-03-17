@@ -32,12 +32,13 @@
 
     .app {
       display: grid;
-      grid-template-rows: auto 1fr auto;
+      grid-template-rows: auto 1fr 4px auto;
       grid-template-columns: 280px 4px 1fr;
       grid-template-areas:
-        "header header header"
-        "controls drag canvas"
-        "chart chart chart";
+        "header    header     header"
+        "controls  drag       canvas"
+        "controls  drag       chart-drag"
+        "controls  drag       chart";
       height: 100vh;
     }
 
@@ -74,6 +75,39 @@
     .drag-handle:hover,
     .drag-handle:focus,
     .drag-handle.dragging {
+      background: var(--accent-primary);
+    }
+
+    .chart-drag-handle {
+      grid-area: chart-drag;
+      background: var(--border);
+      cursor: row-resize;
+      height: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.2s;
+    }
+
+    .chart-drag-handle::after {
+      content: '';
+      width: 30px;
+      height: 2px;
+      background: var(--accent-primary);
+      border-radius: 1px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .chart-drag-handle:hover::after,
+    .chart-drag-handle:focus::after,
+    .chart-drag-handle.dragging::after {
+      opacity: 0.5;
+    }
+
+    .chart-drag-handle:hover,
+    .chart-drag-handle:focus,
+    .chart-drag-handle.dragging {
       background: var(--accent-primary);
     }
 
@@ -526,6 +560,7 @@
       }
 
       .drag-handle { display: none; }
+      .chart-drag-handle { display: none; }
 
       .controls {
         border-right: none;
@@ -608,6 +643,10 @@
     <div class="canvas-area">
       <canvas id="sim-canvas" width="800" height="600" role="img" aria-label="Simulation canvas showing agent positions"></canvas>
     </div>
+
+    <div class="chart-drag-handle" id="chart-drag-handle" tabindex="0" role="separator"
+         aria-orientation="horizontal" aria-valuenow="200" aria-valuemin="100"
+         aria-valuemax="400" title="Drag to resize chart"></div>
 
     <div class="chart-area">
       <div class="chart-legend" id="chart-legend" aria-label="Chart legend"></div>

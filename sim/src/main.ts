@@ -343,6 +343,79 @@ function cancelDrag(): void {
 window.addEventListener('blur', cancelDrag);
 document.addEventListener('visibilitychange', cancelDrag);
 
+// Chart drag handle for resizing chart height
+const chartDragHandle = document.getElementById('chart-drag-handle')!;
+let isChartDragging = false;
+let chartDragStartY = 0;
+let chartStartHeight = 200;
+
+chartDragHandle.addEventListener('mousedown', (e) => {
+  isChartDragging = true;
+  chartDragStartY = e.clientY;
+  chartStartHeight = chartArea.getBoundingClientRect().height;
+  chartDragHandle.classList.add('dragging');
+  document.body.style.cursor = 'row-resize';
+  document.body.style.userSelect = 'none';
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isChartDragging) return;
+  const delta = chartDragStartY - e.clientY;
+  const newHeight = Math.min(400, Math.max(100, chartStartHeight + delta));
+  chartArea.style.height = `${newHeight}px`;
+  chartDragHandle.setAttribute('aria-valuenow', String(Math.round(newHeight)));
+});
+
+document.addEventListener('mouseup', () => {
+  if (!isChartDragging) return;
+  isChartDragging = false;
+  chartDragHandle.classList.remove('dragging');
+  document.body.style.cursor = '';
+  document.body.style.userSelect = '';
+  resizeChart();
+});
+
+// Chart drag keyboard support
+chartDragHandle.addEventListener('keydown', (e) => {
+  const step = 20;
+  const currentHeight = chartArea.getBoundingClientRect().height;
+  let newHeight = currentHeight;
+
+  if (e.key === 'ArrowUp') newHeight = Math.min(400, currentHeight + step);
+  else if (e.key === 'ArrowDown') newHeight = Math.max(100, currentHeight - step);
+  else return;
+
+  e.preventDefault();
+  chartArea.style.height = `${newHeight}px`;
+  chartDragHandle.setAttribute('aria-valuenow', String(Math.round(newHeight)));
+  resizeChart();
+});
+
+// Chart drag touch support
+chartDragHandle.addEventListener('touchstart', (e) => {
+  isChartDragging = true;
+  chartDragStartY = e.touches[0]!.clientY;
+  chartStartHeight = chartArea.getBoundingClientRect().height;
+  chartDragHandle.classList.add('dragging');
+  e.preventDefault();
+}, { passive: false });
+
+document.addEventListener('touchmove', (e) => {
+  if (!isChartDragging) return;
+  const touch = e.touches[0];
+  if (!touch) return;
+  const delta = chartDragStartY - touch.clientY;
+  const newHeight = Math.min(400, Math.max(100, chartStartHeight + delta));
+  chartArea.style.height = `${newHeight}px`;
+}, { passive: true });
+
+document.addEventListener('touchend', () => {
+  if (!isChartDragging) return;
+  isChartDragging = false;
+  chartDragHandle.classList.remove('dragging');
+  resizeChart();
+});
+
 // Inspector keyboard shortcuts
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && inspectorEl.style.display === 'block') {

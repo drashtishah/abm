@@ -1,4 +1,4 @@
-// Creates parameter sliders grouped by tier (core visible, advanced collapsible).
+// Creates parameter sliders for all visible fields (hidden fields excluded).
 import type { World } from './types.js';
 import type { ModelDefinition, ConfigField } from './model-registry.js';
 
@@ -31,15 +31,7 @@ function createSliderRow(
   });
 
   if (field.info) {
-    const infoWrapper = document.createElement('span');
-    infoWrapper.className = 'info-wrapper';
-
-    const icon = document.createElement('span');
-    icon.className = 'info-icon';
-    icon.textContent = '\u2139';
-    icon.setAttribute('tabindex', '0');
-    icon.setAttribute('role', 'button');
-    icon.setAttribute('aria-label', `Info about ${field.label}`);
+    label.classList.add('has-info');
 
     const tooltip = document.createElement('span');
     tooltip.className = 'info-tooltip';
@@ -47,39 +39,9 @@ function createSliderRow(
     tooltip.setAttribute('role', 'tooltip');
     tooltip.textContent = field.info;
 
-    icon.setAttribute('aria-describedby', tooltip.id);
+    label.setAttribute('aria-describedby', tooltip.id);
 
-    icon.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        icon.blur();
-      }
-    });
-
-    // Position tooltip near icon, clamped to viewport
-    function positionTooltip(): void {
-      const rect = icon.getBoundingClientRect();
-      const tooltipW = 250; // max-width from CSS
-      let left = rect.left;
-      const top = rect.top - 8;
-
-      // Clamp horizontally
-      if (left + tooltipW > window.innerWidth - 8) {
-        left = window.innerWidth - tooltipW - 8;
-      }
-      if (left < 8) left = 8;
-
-      tooltip.style.left = `${left}px`;
-      // Show above the icon; measure after display
-      tooltip.style.top = '';
-      tooltip.style.bottom = `${window.innerHeight - top}px`;
-    }
-
-    icon.addEventListener('mouseenter', positionTooltip);
-    icon.addEventListener('focus', positionTooltip);
-
-    infoWrapper.appendChild(icon);
-    infoWrapper.appendChild(tooltip);
-    label.appendChild(infoWrapper);
+    label.appendChild(tooltip);
 
     input.setAttribute('aria-describedby', `tooltip-${field.key}`);
   }
@@ -97,36 +59,10 @@ export function createSliders(
 ): void {
   container.innerHTML = '';
 
-  const coreFields = model.configSchema.filter(f => f.tier !== 'hidden' && f.tier !== 'advanced');
-  const advancedFields = model.configSchema.filter(f => f.tier === 'advanced');
+  const visibleFields = model.configSchema.filter(f => f.tier !== 'hidden');
 
-  // Render core sliders directly
-  for (const field of coreFields) {
+  for (const field of visibleFields) {
     container.appendChild(createSliderRow(field, world));
-  }
-
-  // Render advanced sliders in collapsible section
-  if (advancedFields.length > 0) {
-    const toggle = document.createElement('button');
-    toggle.className = 'advanced-toggle';
-    toggle.textContent = '\u25b8 Advanced';
-    toggle.setAttribute('aria-expanded', 'false');
-
-    const advWrapper = document.createElement('div');
-    advWrapper.className = 'advanced-params collapsed';
-
-    toggle.addEventListener('click', () => {
-      const isCollapsed = advWrapper.classList.toggle('collapsed');
-      toggle.textContent = isCollapsed ? '\u25b8 Advanced' : '\u25be Advanced';
-      toggle.setAttribute('aria-expanded', String(!isCollapsed));
-    });
-
-    for (const field of advancedFields) {
-      advWrapper.appendChild(createSliderRow(field, world));
-    }
-
-    container.appendChild(toggle);
-    container.appendChild(advWrapper);
   }
 
   // Toggles

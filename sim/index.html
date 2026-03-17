@@ -201,33 +201,6 @@
       font-style: italic;
     }
 
-    .advanced-toggle {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-secondary);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 4px 0;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .advanced-toggle:hover,
-    .advanced-toggle:focus {
-      color: var(--text-primary);
-    }
-
-    .advanced-params {
-      overflow: hidden;
-      max-height: 500px;
-      transition: max-height 0.3s ease;
-    }
-
-    .advanced-params.collapsed {
-      max-height: 0;
-    }
-
     .button-group {
       display: flex;
       gap: 6px;
@@ -272,6 +245,11 @@
       letter-spacing: 1px;
       border-bottom: 1px solid var(--border);
       padding-bottom: 4px;
+      margin-top: 12px;
+    }
+
+    .section-label:first-of-type {
+      margin-top: 0;
     }
 
     .slider-row {
@@ -293,30 +271,19 @@
       text-overflow: ellipsis;
     }
 
-    .info-icon {
+    .slider-row label.has-info {
       cursor: pointer;
-      color: var(--text-secondary);
-      font-size: 12px;
-      font-style: normal;
-      opacity: 0.6;
-      outline: none;
-      flex-shrink: 0;
-      line-height: 1;
-    }
-
-    .info-icon:hover,
-    .info-icon:focus {
-      opacity: 1;
-    }
-
-    .info-wrapper {
       position: relative;
-      display: inline-flex;
+      overflow: visible;
+      text-decoration: underline dotted var(--text-secondary);
+      text-underline-offset: 2px;
     }
 
     .info-tooltip {
       display: none;
-      position: fixed;
+      position: absolute;
+      bottom: calc(100% + 6px);
+      left: 0;
       background: var(--bg-surface);
       color: var(--text-primary);
       border: 1px solid var(--accent-primary);
@@ -332,8 +299,7 @@
       pointer-events: none;
     }
 
-    .info-wrapper:hover .info-tooltip,
-    .info-wrapper:focus-within .info-tooltip {
+    .slider-row label.has-info:hover .info-tooltip {
       display: block;
     }
 
@@ -469,11 +435,11 @@
 
     .settings-btn {
       background: none;
-      border: 1px solid var(--border);
+      border: none;
       color: var(--text-secondary);
       width: 28px;
       height: 28px;
-      font-size: 14px;
+      font-size: 18px;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -483,8 +449,6 @@
 
     .settings-btn:hover {
       color: var(--text-primary);
-      border-color: var(--text-secondary);
-      box-shadow: none;
     }
 
     .settings-dropdown {
@@ -664,7 +628,9 @@
 
       <div class="section-label">Speed</div>
       <div class="slider-row">
-        <label for="speed-slider">Update Rate</label>
+        <label for="speed-slider" class="has-info">Update Rate<span class="info-tooltip" id="tooltip-speed" role="tooltip">Simulation steps per frame
+High → fast, quick results
+Low → slow, detailed observation</span></label>
         <input type="range" id="speed-slider" min="1" max="10" step="1" value="1" />
         <span class="slider-value" id="speed-value">1</span>
       </div>

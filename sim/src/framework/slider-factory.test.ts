@@ -96,7 +96,7 @@ describe('slider-factory', () => {
     expect(slider.id).toBe('slider-preyCount');
   });
 
-  it('renders advanced params in collapsible section', () => {
+  it('renders advanced tier fields alongside core fields', () => {
     const tieredModel: ModelDefinition = {
       id: 'test-tiers',
       name: 'Test Tiers',
@@ -114,50 +114,13 @@ describe('slider-factory', () => {
     world.config = { a: 1, b: 2 };
     createSliders(tieredModel, world, container);
 
-    const toggle = container.querySelector('.advanced-toggle');
-    expect(toggle).not.toBeNull();
-    expect(toggle!.textContent).toContain('Advanced');
-
-    const advParams = container.querySelector('.advanced-params');
-    expect(advParams).not.toBeNull();
-    expect(advParams!.classList.contains('collapsed')).toBe(true);
-
-    // Core param is NOT inside advanced section
-    const coreSlider = container.querySelector('#slider-a');
-    expect(coreSlider).not.toBeNull();
-    expect(coreSlider!.closest('.advanced-params')).toBeNull();
-
-    // Advanced param IS inside advanced section
-    const advSlider = container.querySelector('#slider-b');
-    expect(advSlider).not.toBeNull();
-    expect(advSlider!.closest('.advanced-params')).not.toBeNull();
-  });
-
-  it('toggle click expands and collapses advanced section', () => {
-    const advModel: ModelDefinition = {
-      id: 'test-adv',
-      name: 'Test Adv',
-      description: '',
-      context: '',
-      defaultConfig: { a: 1 },
-      configSchema: [
-        { key: 'a', label: 'Adv', min: 0, max: 10, step: 1, default: 1, tier: 'advanced' },
-      ],
-      agentTypes: [],
-      createWorld: vi.fn() as unknown as ModelDefinition['createWorld'],
-    };
-    const world = makeWorld();
-    world.config = { a: 1 };
-    createSliders(advModel, world, container);
-
-    const toggle = container.querySelector('.advanced-toggle') as HTMLButtonElement;
-    const advParams = container.querySelector('.advanced-params')!;
-
-    expect(advParams.classList.contains('collapsed')).toBe(true);
-    toggle.click();
-    expect(advParams.classList.contains('collapsed')).toBe(false);
-    toggle.click();
-    expect(advParams.classList.contains('collapsed')).toBe(true);
+    // Both fields rendered directly, no collapsible section
+    const sliders = container.querySelectorAll('input[type="range"]');
+    expect(sliders).toHaveLength(2);
+    expect((sliders[0] as HTMLInputElement).id).toBe('slider-a');
+    expect((sliders[1] as HTMLInputElement).id).toBe('slider-b');
+    expect(container.querySelector('.advanced-toggle')).toBeNull();
+    expect(container.querySelector('.advanced-params')).toBeNull();
   });
 
   it('renders info tooltip when field has info', () => {
@@ -181,9 +144,10 @@ describe('slider-factory', () => {
     expect(tooltip).not.toBeNull();
     expect(tooltip!.textContent).toBe('Help text');
 
-    const icon = container.querySelector('.info-icon');
-    expect(icon).not.toBeNull();
-    expect(icon!.getAttribute('role')).toBe('button');
-    expect(icon!.getAttribute('tabindex')).toBe('0');
+    const label = container.querySelector('label.has-info');
+    expect(label).not.toBeNull();
+    expect(label!.getAttribute('aria-describedby')).toBe('tooltip-a');
+    // Tooltip is a child of the label (CSS hover reveals it)
+    expect(label!.contains(tooltip)).toBe(true);
   });
 });

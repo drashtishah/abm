@@ -562,6 +562,23 @@
       .drag-handle { display: none; }
       .chart-drag-handle { display: none; }
 
+      .header {
+        flex-wrap: wrap;
+      }
+
+      .header-right {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .header-right select {
+        order: 10;
+        width: 100%;
+        max-width: 340px;
+        margin-top: 6px;
+        text-align: center;
+      }
+
       .controls {
         border-right: none;
         border-bottom: 1px solid var(--border);

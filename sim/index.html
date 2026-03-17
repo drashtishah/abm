@@ -563,21 +563,21 @@
       .chart-drag-handle { display: none; }
 
       .header {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 4px;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
       }
 
       .header-right {
         flex-wrap: wrap;
         justify-content: center;
+        gap: 8px;
       }
 
       .header-right select {
         order: 10;
         width: 100%;
         max-width: 340px;
-        margin-top: 6px;
         text-align: center;
       }
 
@@ -588,6 +588,11 @@
         min-height: auto;
         padding: 12px 16px;
         align-items: center;
+      }
+
+      .model-context {
+        border: none;
+        padding: 0;
       }
 
       .model-context,

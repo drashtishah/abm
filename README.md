@@ -1,4 +1,4 @@
-# Pattern Hunter
+# Simulator
 
 **[Play now](https://drashtishah.github.io/abm/)**
 

@@ -8,3 +8,8 @@ dist/
 screenshot-audit/
 sim/science/.venv/
 sim/science/*/experiments/
+reports/
+.superpowers/
+agent.md
+claude.md
+index.md

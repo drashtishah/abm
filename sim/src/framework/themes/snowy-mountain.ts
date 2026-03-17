@@ -1,21 +1,21 @@
-// Snowy Mountain theme — light, icy blues inspired by snow-covered peaks.
+// Snowy Mountain theme — arctic frost: crisp whites, glacier blues, frozen abyss depths.
 import { registerTheme } from './theme-registry.js';
 
 registerTheme({
   id: 'snowy-mountain',
   name: 'Snowy Mountain',
   colors: {
-    bgPrimary: '#DCE9ED',
-    bgSurface: '#B3D2DB',
-    border: '#89B5C0',
-    accentPrimary: '#4E6C73',
-    accentSecondary: '#6997A2',
-    accentTertiary: '#304043',
-    textPrimary: '#304043',
-    textSecondary: '#4E6C73',
-    colorGrass: '#5a7f6e',
-    colorGrassEaten: '#e8f0f2',
-    colorDanger: '#b04a4a',
+    bgPrimary: '#EFF4F8',       // fresh snowfield — blue-white, zero warmth
+    bgSurface: '#FFFFFF',       // pure snow surface
+    border: '#C4D4E0',          // frost edge — cool silver-blue
+    accentPrimary: '#3E89A0',   // glacier water — icy teal, bold
+    accentSecondary: '#6AB6D9', // frozen lake reflection
+    accentTertiary: '#1E5064',  // arctic deep — frozen abyss
+    textPrimary: '#1A2E3B',     // midnight frost — 12:1 on snow (AAA)
+    textSecondary: '#5A7488',   // slate ice — 4.5:1 on snow (AA)
+    colorGrass: '#7BAFC4',      // frozen tundra blue-green
+    colorGrassEaten: '#DDE8EF', // wind-swept snowpack
+    colorDanger: '#A83040',     // frostbite red — cold, not warm
   },
-  agentPalette: ['#9d0208', '#3d5a80', '#5a7f6e'],
+  agentPalette: ['#1E5064', '#F2A65A', '#5A9BB0'],
 });

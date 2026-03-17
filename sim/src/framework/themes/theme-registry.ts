@@ -24,7 +24,7 @@ function toKebab(key: string): string {
 /** Apply theme by setting CSS custom properties on :root. Persists to localStorage. */
 export function applyTheme(id: string): void {
   let theme = themes.get(id);
-  if (!theme) theme = themes.get('biopunk');
+  if (!theme) theme = themes.get('cozy');
   if (!theme) {
     const first = themes.values().next();
     if (first.done) return;
@@ -42,14 +42,14 @@ export function applyTheme(id: string): void {
 
 /** Get the currently applied theme ID from localStorage. */
 export function getSavedThemeId(): string {
-  return localStorage.getItem('abm-theme') ?? 'biopunk';
+  return localStorage.getItem('abm-theme') ?? 'cozy';
 }
 
 /** Resolve agent color: palette[index] > model default. Index is agent's position in model.agentTypes. */
 export function getThemedAgentColor(agentIndex: number, fallback: string): string {
   const id = typeof localStorage !== 'undefined'
-    ? (localStorage.getItem('abm-theme') ?? 'biopunk')
-    : 'biopunk';
+    ? (localStorage.getItem('abm-theme') ?? 'cozy')
+    : 'cozy';
   const theme = themes.get(id);
   if (!theme?.agentPalette?.length) return fallback;
   return theme.agentPalette[agentIndex % theme.agentPalette.length] ?? fallback;

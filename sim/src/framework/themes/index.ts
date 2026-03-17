@@ -2,3 +2,4 @@
 import './biopunk.js';
 import './snowy-mountain.js';
 import './psycho.js';
+import './cozy.js';

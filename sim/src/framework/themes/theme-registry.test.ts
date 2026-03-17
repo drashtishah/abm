@@ -38,4 +38,14 @@ describe('theme-registry', () => {
     registerTheme(second);
     expect(listThemes()).toHaveLength(2);
   });
+
+  it('cozy theme registers with all required colors and agent palette', async () => {
+    await import('./cozy.js');
+    const cozy = getTheme('cozy');
+    expect(cozy).toBeDefined();
+    expect(cozy!.name).toBe('Cozy');
+    expect(cozy!.colors.bgPrimary).toBe('#FAF6F0');
+    expect(cozy!.colors.colorGrass).toBe('#A3B898');
+    expect(cozy!.agentPalette).toHaveLength(3);
+  });
 });

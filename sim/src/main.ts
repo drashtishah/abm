@@ -96,9 +96,9 @@ function rebuildThemedColors(): void {
 
   modelContext.innerHTML = renderContextHTML(currentModel.context, contextColorMap);
   if (currentModel.challengeText || currentModel.patternSvg) {
-    let challengeHTML = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">';
+    let challengeHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">';
     if (currentModel.challengeText) {
-      challengeHTML += `<div style="color:var(--accent-tertiary);font-size:10px;margin-bottom:4px">${currentModel.challengeText}</div>`;
+      challengeHTML += `<div style="color:var(--accent-primary);font-size:13px;font-weight:600;line-height:1.4;margin-bottom:6px">${currentModel.challengeText}</div>`;
     }
     if (currentModel.patternSvg) {
       challengeHTML += themedPatternSvg(currentModel.patternSvg, currentModel);

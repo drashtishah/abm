@@ -9,7 +9,7 @@ import { createSliders } from './framework/slider-factory.js';
 import { exportCSV } from './framework/csv-export.js';
 import { renderContextHTML } from './framework/context-renderer.js';
 import './framework/themes/index.js';
-import { listThemes, applyTheme, getSavedThemeId } from './framework/themes/theme-registry.js';
+import { listThemes, applyTheme, getSavedThemeId, getThemedAgentColor } from './framework/themes/theme-registry.js';
 
 let currentModel: ModelDefinition;
 let world: World;
@@ -29,13 +29,20 @@ const modelContext = document.getElementById('model-context')!;
 let popElements = new Map<string, HTMLElement>();
 let popDisplayEntries: PopulationDisplayEntry[] = [];
 
+/** Resolve themed color for a population entry by its position in populationDisplay. */
+function themedPopColor(entry: PopulationDisplayEntry, model: ModelDefinition): string {
+  const entries = getPopulationDisplay(model);
+  const idx = entries.findIndex(e => e.key === entry.key);
+  return idx >= 0 ? getThemedAgentColor(idx, entry.color) : entry.color;
+}
+
 function buildPopulationDisplay(model: ModelDefinition): void {
   popContainer.textContent = '';
   popElements = new Map();
   popDisplayEntries = getPopulationDisplay(model);
   for (const entry of popDisplayEntries) {
     const span = document.createElement('span');
-    span.style.color = entry.color;
+    span.style.color = themedPopColor(entry, model);
     span.setAttribute('data-pop-key', entry.key);
     span.textContent = `${entry.label}: 0`;
     popContainer.appendChild(span);
@@ -49,11 +56,56 @@ function buildChartLegend(model: ModelDefinition): void {
   for (const entry of entries) {
     const span = document.createElement('span');
     span.className = 'legend-item';
-    span.style.color = entry.color;
+    span.style.color = themedPopColor(entry, model);
     span.textContent = `\u25A0 ${entry.label}`;
     chartLegend.appendChild(span);
   }
 }
+
+/** Replace hardcoded agent colors in patternSvg with themed palette colors. */
+function themedPatternSvg(svg: string, model: ModelDefinition): string {
+  let result = svg;
+  for (let i = 0; i < model.agentTypes.length; i++) {
+    const original = model.agentTypes[i]!.color;
+    const themed = getThemedAgentColor(i, original);
+    if (themed !== original) {
+      result = result.split(original).join(themed);
+    }
+  }
+  return result;
+}
+
+/** Rebuild all color-dependent UI elements for the current model and theme. */
+function rebuildThemedColors(): void {
+  if (!currentModel) return;
+  buildPopulationDisplay(currentModel);
+  buildChartLegend(currentModel);
+
+  const contextColorMap = new Map<string, string>();
+  for (const entry of getPopulationDisplay(currentModel)) {
+    contextColorMap.set(entry.key, entry.color);
+  }
+  for (let i = 0; i < currentModel.agentTypes.length; i++) {
+    const at = currentModel.agentTypes[i]!;
+    if (!contextColorMap.has(at.type)) {
+      contextColorMap.set(at.type, getThemedAgentColor(i, at.color));
+    }
+  }
+
+  modelContext.innerHTML = renderContextHTML(currentModel.context, contextColorMap);
+  if (currentModel.challengeText || currentModel.patternSvg) {
+    let challengeHTML = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">';
+    if (currentModel.challengeText) {
+      challengeHTML += `<div style="color:var(--accent-tertiary);font-size:10px;margin-bottom:4px">${currentModel.challengeText}</div>`;
+    }
+    if (currentModel.patternSvg) {
+      challengeHTML += themedPatternSvg(currentModel.patternSvg, currentModel);
+    }
+    challengeHTML += '</div>';
+    modelContext.innerHTML += challengeHTML;
+  }
+}
+
 const attribution = document.getElementById('attribution')!;
 const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
 const speedValue = document.getElementById('speed-value')!;
@@ -120,34 +172,8 @@ function loadModel(id: string): void {
   chartArea.classList.remove('has-data');
   downloadBtn.setAttribute('disabled', '');
 
-  // Build dynamic population display and chart legend from model definition
-  buildPopulationDisplay(def);
-  buildChartLegend(def);
-
-  // Build color map for context bullet coloring from populationDisplay + agentTypes
-  const contextColorMap = new Map<string, string>();
-  for (const entry of getPopulationDisplay(def)) {
-    contextColorMap.set(entry.key, entry.color);
-  }
-  for (const at of def.agentTypes) {
-    if (!contextColorMap.has(at.type)) contextColorMap.set(at.type, at.color);
-  }
-
-  // Update UI
-  modelContext.innerHTML = renderContextHTML(def.context, contextColorMap);
-
-  // Append challenge text and expected pattern SVG if model defines them
-  if (def.challengeText || def.patternSvg) {
-    let challengeHTML = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">';
-    if (def.challengeText) {
-      challengeHTML += `<div style="color:var(--accent-tertiary);font-size:10px;margin-bottom:4px">${def.challengeText}</div>`;
-    }
-    if (def.patternSvg) {
-      challengeHTML += def.patternSvg;
-    }
-    challengeHTML += '</div>';
-    modelContext.innerHTML += challengeHTML;
-  }
+  // Build themed population display, chart legend, context, and pattern SVG
+  rebuildThemedColors();
 
   attribution.innerHTML = def.credit
     ? `<p>${def.credit}</p>`
@@ -463,6 +489,7 @@ function populateThemeList(): void {
     el.setAttribute('data-theme-id', theme.id);
     el.addEventListener('click', () => {
       applyTheme(theme.id);
+      rebuildThemedColors();
       populateThemeList();
     });
     themeListEl.appendChild(el);

@@ -18,4 +18,5 @@ export interface ThemeDefinition {
   id: string;
   name: string;
   colors: ThemeColors;
+  agentPalette?: string[];
 }

@@ -1,6 +1,7 @@
 import type { World } from './types.js';
 import type { ModelDefinition } from './model-registry.js';
 import { getThemeColors } from './theme.js';
+import { getThemedAgentColor } from './themes/theme-registry.js';
 
 interface GrassPatch {
   alive: boolean;
@@ -39,8 +40,9 @@ export function render(
   // Build color and shape maps from model definition
   const colorMap = new Map<string, string>();
   const shapeMap = new Map<string, string>();
-  for (const at of model.agentTypes) {
-    colorMap.set(at.type, at.color);
+  for (let i = 0; i < model.agentTypes.length; i++) {
+    const at = model.agentTypes[i]!;
+    colorMap.set(at.type, getThemedAgentColor(i, at.color));
     shapeMap.set(at.type, at.shape);
   }
 

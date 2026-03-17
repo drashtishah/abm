@@ -2,6 +2,7 @@ import type { World } from './types.js';
 import type { ModelDefinition } from './model-registry.js';
 import { getPopulationDisplay } from './model-registry.js';
 import { getThemeColors } from './theme.js';
+import { getThemedAgentColor } from './themes/theme-registry.js';
 
 export function renderStats(
   ctx: CanvasRenderingContext2D,
@@ -9,8 +10,9 @@ export function renderStats(
   model: ModelDefinition
 ): void {
   const colors: Record<string, string> = {};
-  for (const at of model.agentTypes) {
-    colors[at.type] = at.color;
+  for (let i = 0; i < model.agentTypes.length; i++) {
+    const at = model.agentTypes[i]!;
+    colors[at.type] = getThemedAgentColor(i, at.color);
   }
 
   // Draw population counts top-left
@@ -108,8 +110,9 @@ export function renderChart(
 
   // Color map — population keys must match agent type names exactly
   const lineColors: Record<string, string> = {};
-  for (const at of model.agentTypes) {
-    lineColors[at.type] = at.color;
+  for (let i = 0; i < model.agentTypes.length; i++) {
+    const at = model.agentTypes[i]!;
+    lineColors[at.type] = getThemedAgentColor(i, at.color);
   }
   // Draw lines
   for (const key of keys) {

@@ -7,6 +7,10 @@ description: >-
   to files under sim/src/, adding new models, fixing bugs, writing tests, or modifying the UI.
 ---
 
+## 0. NetLogo Fidelity Rule
+
+When the user provides NetLogo source code, the implementation must follow the exact mechanism and logic from that code. Do not reinterpret, simplify, or "improve" the algorithm — translate it faithfully to TypeScript while respecting the framework's architecture (pure behaviors, BaseWorld state, etc.).
+
 ## 1. Project Overview
 
 - **Stack**: Vite + TypeScript (strict mode), entry: `sim/src/main.ts`, HTML shell: `sim/index.html`
@@ -16,7 +20,12 @@ description: >-
   - `npm run test` — Vitest (unit + integration + stress)
   - `npm run test:watch` — Vitest in watch mode
   - `npm run test:e2e` — Playwright browser tests
-- **Theming**: CSS custom properties in `index.html :root` (`--bg-primary`, `--color-grass`, etc.)
+  - `npm run test:property` — property-based invariant tests (fast-check)
+  - `npm run test:golden` — golden baseline comparison (deterministic seeds)
+  - `npm run test:coverage` — coverage report
+  - `npm run verify` — full verification pipeline (test + tsc + lint + e2e)
+  - `npm run lint:all` — eslint + knip + tsc
+- **Theming**: CSS custom properties in `index.html :root` (`--bg-primary`, `--color-grass`, etc.) + palette-based agent colors (`agentPalette` in `ThemeDefinition`). See §3 "New Theme" workflow.
 - **Two-layer architecture**:
   - **Framework** (`sim/src/framework/`) — generic ABM engine, renderer, controls, registry
   - **Models** (`sim/src/models/<name>/`) — specific simulations (wolf-sheep, etc.)
@@ -54,15 +63,18 @@ npx tsc --noEmit
 3. Fix the code — make **ONE targeted fix**, not a rewrite
 4. Confirm the regression test passes + **full suite passes**
 5. The regression test stays forever — never delete it
+6. **Co-edit rule**: When modifying a function, MUST also update its colocated `.test.ts` in the same edit session. If the function has numeric invariants (bounds, conservation, monotonicity), add a property test in `*.property.test.ts`.
 
 ### New Feature
 
 1. Determine the correct layer (framework vs. model)
 2. Define the **interface/type signature first** before implementation
 3. Write tests **alongside** implementation (colocated `*.test.ts`)
-4. Update `configSchema` in `definition.ts` if adding user-facing parameters
-5. Ensure output is agent-readable (see `references/agent-readable-output.md`)
-6. Run the full suite including E2E: `npm run test && npm run test:e2e`
+4. **Co-edit rule**: When modifying a function, MUST also update its colocated `.test.ts` in the same edit session. If the function has numeric invariants, add a property test in `*.property.test.ts`.
+5. **Coverage gate**: Test coverage must not decrease. Run `npm run test:coverage` before and after changes. If coverage drops, add tests before proceeding.
+6. Update `configSchema` in `definition.ts` if adding user-facing parameters
+7. Ensure output is agent-readable (see `references/agent-readable-output.md`)
+8. Run the full suite including E2E: `npm run test && npm run test:e2e`
 
 ### Refactor
 
@@ -82,6 +94,46 @@ When adding or tuning model parameters:
 2. **If no canonical model exists**: Use the `research` skill (nlm-backed) to research the model domain, validate parameter ranges against literature, and document assumptions in the definition's `info` fields.
 3. **For our extensions** (parameters not in the original): Document why they exist and how defaults were chosen in the `info` tooltip text.
 4. **For systematic validation**: Use the `scientist` skill to run 3-phase sensitivity analysis (Morris screening → Sobol → optimization) and find parameter combinations that produce the model's `expectedPattern`.
+5. **For quick tuning on known models**: Use the experiment loop (`references/experiment-loop.md`) — a lightweight hypothesis-driven iteration (10-20 runs) instead of the full scientist pipeline.
+
+### New Theme
+
+1. **Read first**: `sim/src/framework/themes/types.ts` (interface), an existing theme like `biopunk.ts` (pattern), `theme-registry.ts` (registration + `getThemedAgentColor`)
+2. **Create** `sim/src/framework/themes/{theme-id}.ts`:
+   - File docstring (1 line: theme name + visual inspiration)
+   - `import { registerTheme } from './theme-registry.js';`
+   - Call `registerTheme({ id, name, colors, agentPalette })` with all 11 `ThemeColors` properties
+   - `agentPalette`: ordered array of agent colors — maps by index to `model.agentTypes` and `populationDisplay` entries (e.g., palette[0]=wolf, palette[1]=sheep, palette[2]=grass). New models automatically get palette colors with zero theme changes.
+3. **Register** in `sim/src/framework/themes/index.ts` — add `import './{theme-id}.js';`
+4. **Test** in `theme-registry.test.ts` — verify registration and all colors are set
+5. Settings dropdown auto-populates via `listThemes()`
+
+**Architecture notes:**
+- `ThemeColors` → CSS custom properties on `:root` (UI chrome, grass grid, backgrounds)
+- `agentPalette` → canvas-rendered agents, population text, chart lines, pattern SVG. Resolved via `getThemedAgentColor(index, fallback)` at the UI layer
+- `model-registry.ts` must NOT import from themes (ESLint `no-restricted-imports` — engine code is headless). Theming is applied in `canvas-renderer.ts`, `stats-overlay.ts`, and `main.ts`
+- On theme switch, `rebuildThemedColors()` in `main.ts` refreshes population display, chart legend, context colors, and pattern SVG
+
+**Color consumption map:**
+| Color property | Where consumed |
+|---|---|
+| `bgPrimary`, `bgSurface`, `border` | CSS vars → `index.html` styles, canvas background |
+| `accentPrimary/Secondary/Tertiary` | CSS vars → buttons, active states, highlights |
+| `textPrimary`, `textSecondary` | CSS vars → all text, canvas stats overlay |
+| `colorGrass`, `colorGrassEaten` | CSS vars → canvas grid via `getThemeColors()` |
+| `colorDanger` | CSS vars → alert/danger indicators |
+| `agentPalette[0..n]` | `canvas-renderer.ts`, `stats-overlay.ts`, `main.ts` (pop display, chart legend, context, pattern SVG) |
+
+**Validation checklist:**
+- [ ] All 11 `ThemeColors` defined (TypeScript enforces)
+- [ ] `id` is kebab-case, `name` is display-friendly
+- [ ] `textPrimary` on `bgPrimary`: WCAG AA contrast (4.5:1+)
+- [ ] `textSecondary` on `bgPrimary`: at least 3:1 contrast
+- [ ] `accentPrimary` visible on both `bgPrimary` and `bgSurface`
+- [ ] `colorGrass` and `colorGrassEaten` visually distinct
+- [ ] `agentPalette` has enough entries for the largest model's population count (wolf-sheep: 3 — wolf, sheep, grass)
+- [ ] Light themes: slider tracks, checkboxes, scrollbars remain visible (use `--bg-surface` and `--border`)
+- [ ] Visual spot-check: switch theme, run simulation 50+ ticks, verify canvas + chart + population text
 
 ### Expected Pattern (required for all models)
 
@@ -109,13 +161,19 @@ Every model must define an `expectedPattern` in its `definition.ts`. This declar
 
 ## 6. Testing Requirements
 
-Testing pyramid (proven approach from initial build — 63 tests across 5 levels):
+Testing pyramid (multi-layer approach with auto-discovery):
 
 ```
          +----------+
          | E2E (7)  |  Playwright — real browser, real canvas pixels
          +----------+
-         | QA  (10) |  Vitest — stress, oscillation validation, build
+         |QA/Stress |  Vitest — model-specific stress, oscillation, build
+         +----------+
+         |Contract(8)|  Vitest — auto-discovered model contracts (listModels)
+         +----------+
+         |Golden (3) |  Headless — deterministic seed baseline comparison
+         +----------+
+         |Property   |  Vitest + fast-check — invariant properties
          +----------+
          | UI  (12) |  Vitest + jsdom — renderer/controls with mock ctx
          +----------+
@@ -136,8 +194,13 @@ Testing pyramid (proven approach from initial build — 63 tests across 5 levels
   - Responsive: desktop + mobile viewports
   - Screenshot audit: `npx playwright test screenshot-audit --project='chromium-*'` — lifecycle + resize captures (Chromium only)
   - Quick viewport check: `bash scripts/screenshot-check.sh` — CLI screenshots at 7 viewports, no interaction
-- Stress tests: 1000-tick stability, population bounds, NaN checks (`sim/src/stress.test.ts`)
+- Contract tests: auto-discovered via `listModels()` — new models get contract coverage with zero wiring (`sim/src/contract.test.ts`)
+- Property tests: invariant validation with fast-check (`*.property.test.ts` colocated with source)
+- Golden baselines: deterministic seed comparisons (`npm run test:golden`)
+- Stress tests: model-specific domain behavior (`sim/src/stress.test.ts`)
 - Bug-fix tests: `it('regression: <description>')` — stays forever
+- Mutation testing: advisory, run `npm run test:mutation` before releases
+- Cross-browser: consult `references/testing-strategy.md` § "Cross-Browser CSS Pitfalls" when writing any CSS for form elements or viewport-dependent layout
 - See `references/testing-strategy.md` for full patterns and examples
 
 ## 7. AI Guardrails
@@ -147,6 +210,7 @@ Testing pyramid (proven approach from initial build — 63 tests across 5 levels
 - **NEVER** add dead code, unused imports, or speculative features
 - **NEVER** weaken error handling or remove edge-case coverage
 - **NEVER** write tests that only assert code runs — assert **behavior and invariants**
+- **Simplification wins** — All else equal, simpler is better. A small improvement that adds ugly complexity is not worth it. Removing code and getting equal or better results is always a win — keep the deletion. A 0-line diff is better than a 20-line diff that does the same thing.
 - **NEVER** accept "exit code 0" alone as passing — verify actual test assertions
 - **NEVER** suppress errors or warnings (`// eslint-disable`, `@ts-ignore`, empty `catch {}`, `--no-verify`) — fix root causes
 - If you cannot explain **WHY** a line of code exists, do not write it
@@ -170,7 +234,7 @@ Testing pyramid (proven approach from initial build — 63 tests across 5 levels
 - Parameter names in the DOM must match code variable names (e.g., `data-param="wolfSpeed"`)
 - Simulation state should be readable from the DOM (`#tick-display`, `[data-pop-key="{type}"]`)
 - HTML must be semantic (proper headings, `<label>` elements, ARIA where needed)
-- The Web Fetch tool or Playwright MCP can verify the live app at `localhost:5173`
+- Use Playwright CLI (`npx playwright-cli snapshot/screenshot`) for token-efficient browser inspection at `localhost:5173`
 - See `references/agent-readable-output.md` for the full specification
 
 ## 10. Complete Cycle
@@ -183,15 +247,19 @@ Every code session starts and ends with this cycle. Do not skip phases.
 - Do not proceed until sandbox is confirmed.
 
 ### Phase 1: Plan
-- If a review report exists at `sim/review-report.md`, read it — its findings become the task list
+- Ask: "Do you have a review report, bug list, or feature request document to work from? If so, provide the path." If user provides a path → read it, use findings as task list. If no path → proceed normally. NEVER hardcode a report path.
 - Classify each task: bug-fix | new-feature | new-model | refactor | UI-change
 - Complete §2 mandatory checklist (read files, run baseline, search for existing abstractions)
 - For **new-model**: invoke the `research` skill first to produce a model brief
 - For **parameter validation** (new or tuned parameters): invoke the `research` skill to validate defaults and ranges against literature/canonical models (e.g., NetLogo). Document sources in `creditUrl` or `info` tooltip.
+- For **new features or creative work**: invoke the `brainstorming` superpowers skill
+- For **processing review-team output**: invoke the `receiving-code-review` superpowers skill
+- For **UI changes**: Before implementing, generate a lightweight HTML preview showing ONLY the affected component(s) with proposed changes. Save to `sim/test/ui-preview.html`, open for user: **"Here's how [component] will look — approve to proceed?"** Delete the preview file after approval. This is lighter than the full ui-review playground — just the changed piece in isolation.
 - For non-trivial changes: outline approach, confirm with user before implementing
 
 ### Phase 2: Implement
 - Follow the matching §3 workflow (bug-fix, new-feature, refactor, new-model)
+- For **new features** (not just bug fixes): invoke the `test-driven-development` superpowers skill
 - Prefer minimal, targeted edits over rewrites
 - **When 4+ independent files change**: use git worktrees for parallel work.
   Spawn agents from `.claude/agents/` with `isolation: "worktree"`:
@@ -214,12 +282,22 @@ All commands run from `sim/`:
             continue
     if stuck after 10 iterations: simplify approach, retry 3 more
 
+- **Time budget**: If the verify loop exceeds 20 minutes on a single issue, step back and simplify the approach. If stuck after 5 iterations, invoke the `systematic-debugging` superpowers skill instead of blind retries.
+- **Triage failures**: Trivial fix (typo, missing import, off-by-one) → fix and continue. Fundamentally broken approach (wrong abstraction, architectural mismatch) → revert and try a different approach. Max 3 attempts on a fundamentally broken idea before abandoning it.
+
     # After unit/lint pass, run extended checks + E2E
     run: npm run lint:all    # eslint + knip (dead code) + type-coverage
     run: npx playwright test
     run: npx playwright test screenshot-audit --project='chromium-*'
     if failures → fix and re-run (same loop logic)
 
+    # After E2E pass, run behavioral verification
+    run: npm run test:golden
+    if golden baselines changed → review diff
+      if intentional (bug fix, algorithm change) → npm run test:golden:update
+      if unintentional (refactor side-effect) → revert the behavioral change
+
+- After unit/lint/E2E/golden pass, run scorecard dimensions 1-4 + 8-11 (see `references/scorecard.md`)
 - Never skip a step. Never mark done until vitest + tsc + lint:all + playwright all pass.
 - If a test is flaky, fix the flakiness — do not retry and hope.
 - **Fix all linting errors** — even if they pre-date your changes. Zero warnings policy applies to the entire codebase, not just your diff.
@@ -230,18 +308,34 @@ All commands run from `sim/`:
 2. If not running: `cd sim && npx vite &` — poll with curl each second, up to 5s
 3. Run viewport screenshot check: `cd sim && bash scripts/screenshot-check.sh http://localhost:5173`
    Review 7 viewport PNGs in `sim/screenshot-audit/<timestamp>/`
-4. Open `http://localhost:5173` for the user
-5. For UI changes: also invoke `ui-review` skill to spin up a playground for structured feedback
-6. For pure engine changes with no visual impact: skip preview with explicit note
-7. Ask: **"All checks pass. Please verify at http://localhost:5173 — approve to push."**
+4. **Cross-browser check** (when CSS or layout changed):
+   a. Consult `references/testing-strategy.md` § "Cross-Browser CSS Pitfalls" for known gotchas
+   b. Search the web for `"Safari CSS [property-name] bug"` or `"iOS [feature] gotcha"` if using: viewport units, position fixed/sticky, form elements, backdrop-filter, or newer CSS features
+   c. Use Playwright CLI for quick visual inspection:
+      ```bash
+      # Accessibility snapshot (saved to disk — token efficient)
+      npx playwright-cli snapshot http://localhost:5173
+      # Screenshot at mobile viewport
+      npx playwright-cli screenshot http://localhost:5173 --viewport-size=375,667
+      ```
+   d. Note in commit/PR if manual Safari testing is needed (Playwright WebKit ≠ real iOS Safari)
+5. Open `http://localhost:5173` for the user
+6. For UI changes: also invoke `ui-review` skill to spin up a playground for structured feedback
+7. For pure engine changes with no visual impact: skip preview with explicit note
+8. Before declaring done, invoke the `verification-before-completion` superpowers skill
+9. For model/engine changes: run scorecard dimensions 5-7 (see `references/scorecard.md`)
+10. Ask: **"All checks pass. Please verify at http://localhost:5173 — approve to push."**
 
 ### Phase 5: Ship
 When user approves ("LGTM", "looks good", "ship it", "approved"):
-1. Invoke `/commit` — stages explicitly, commits, pushes
-2. GitHub Actions deploys to Pages on push to main
-3. Report commit hash + push status
-4. Ask: **"Any feedback to save as a learning?"**
-5. If feedback: append to `references/learnings.md` (one rule per entry, no duplicates)
+1. Invoke the `finishing-a-development-branch` superpowers skill for merge/PR/cleanup decision
+2. Invoke `/commit` — stages explicitly, commits, pushes
+3. GitHub Actions deploys to Pages on push to main
+4. Report commit hash + push status
+5. Print the full quality scorecard (see `references/scorecard.md`)
+6. Auto-capture learnings: if anything surprising was discovered during this session (a test harder than expected, a pattern that didn't work, an abstraction that was missing), append a 1-2 line entry to `references/learnings.md` — don't wait for user to offer feedback.
+7. Ask: **"Any feedback to save as a learning?"**
+8. If feedback: append to `references/learnings.md` (one rule per entry, no duplicates)
 
 ### Cardinal Rule
 No errors, warnings, or lint issues may be suppressed. No `// eslint-disable`,

@@ -45,6 +45,16 @@ export function getSavedThemeId(): string {
   return localStorage.getItem('abm-theme') ?? 'biopunk';
 }
 
+/** Resolve agent color: palette[index] > model default. Index is agent's position in model.agentTypes. */
+export function getThemedAgentColor(agentIndex: number, fallback: string): string {
+  const id = typeof localStorage !== 'undefined'
+    ? (localStorage.getItem('abm-theme') ?? 'biopunk')
+    : 'biopunk';
+  const theme = themes.get(id);
+  if (!theme?.agentPalette?.length) return fallback;
+  return theme.agentPalette[agentIndex % theme.agentPalette.length] ?? fallback;
+}
+
 /** Test-only: clear registry */
 export function _resetForTesting(): void {
   themes.clear();

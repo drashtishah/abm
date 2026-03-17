@@ -82,8 +82,10 @@ function rebuildThemedColors(): void {
   buildChartLegend(currentModel);
 
   const contextColorMap = new Map<string, string>();
-  for (const entry of getPopulationDisplay(currentModel)) {
-    contextColorMap.set(entry.key, entry.color);
+  const popEntries = getPopulationDisplay(currentModel);
+  for (let i = 0; i < popEntries.length; i++) {
+    const entry = popEntries[i]!;
+    contextColorMap.set(entry.key, getThemedAgentColor(i, entry.color));
   }
   for (let i = 0; i < currentModel.agentTypes.length; i++) {
     const at = currentModel.agentTypes[i]!;

@@ -157,14 +157,16 @@ function loadModel(id: string): void {
   setupControls({
     world,
     defaultConfig: { ...def.defaultConfig },
+    configSchema: def.configSchema,
     onReset: () => {
-      // Reset slider values to defaults without rebuilding (preserves advanced section state)
+      // Sync slider UI to new randomized values from world.config
       for (const field of def.configSchema) {
         const slider = document.getElementById(`slider-${field.key}`) as HTMLInputElement | null;
         if (slider) {
-          slider.value = String(field.default);
+          const val = String(world.config[field.key] ?? field.default);
+          slider.value = val;
           const valueSpan = slider.parentElement?.querySelector('.slider-value');
-          if (valueSpan) valueSpan.textContent = String(field.default);
+          if (valueSpan) valueSpan.textContent = val;
         }
       }
     },

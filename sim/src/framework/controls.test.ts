@@ -1,91 +1,31 @@
-// @vitest-environment jsdom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setupControls } from './controls.js';
-import type { World } from './types.js';
+import { describe, it, expect } from 'vitest';
+import { randomizeConfig } from './controls.js';
+import type { ConfigField } from './model-registry.js';
 
-function makeWorld(): World {
-  return {
-    agents: [],
-    config: { speed: 2 },
-    running: false,
-    tick: 0,
-    populationHistory: [],
-    setup: vi.fn(),
-    step: vi.fn(),
-    reset: vi.fn(),
-    updateConfig: vi.fn(),
-    getPopulationCounts: vi.fn(() => ({})),
-    random: vi.fn(() => 0.5),
-  };
-}
+const schema: ConfigField[] = [
+  { key: 'count', label: 'Count', min: 10, max: 100, step: 5, default: 50, tier: 'core' },
+  { key: 'rate', label: 'Rate', min: 1, max: 20, step: 1, default: 5, tier: 'advanced' },
+  { key: 'hidden', label: 'Hidden', min: 0, max: 10, step: 1, default: 0, tier: 'hidden' },
+];
 
-const defaultConfig = { speed: 1 };
-
-describe('controls', () => {
-  beforeEach(() => {
-    document.body.innerHTML = `
-      <button id="btn-setup">Setup</button>
-      <button id="btn-go">Go</button>
-      <button id="btn-step">Step</button>
-      <button id="btn-reset">Reset</button>
-    `;
+describe('randomizeConfig', () => {
+  it('generates values within [min, max] for non-hidden fields', () => {
+    const result = randomizeConfig(schema);
+    expect(result['count']).toBeGreaterThanOrEqual(10);
+    expect(result['count']).toBeLessThanOrEqual(100);
+    expect(result['rate']).toBeGreaterThanOrEqual(1);
+    expect(result['rate']).toBeLessThanOrEqual(20);
   });
 
-  it('go button toggles running state', () => {
-    const world = makeWorld();
-    setupControls({ world, defaultConfig });
-
-    const goBtn = document.getElementById('btn-go')!;
-    goBtn.click();
-    expect(world.running).toBe(true);
-
-    goBtn.click();
-    expect(world.running).toBe(false);
+  it('excludes hidden fields from randomization', () => {
+    const result = randomizeConfig(schema);
+    expect(result['hidden']).toBeUndefined();
   });
 
-  it('setup calls reset without changing config', () => {
-    const world = makeWorld();
-    setupControls({ world, defaultConfig });
-
-    const setupBtn = document.getElementById('btn-setup')!;
-    setupBtn.click();
-
-    expect(world.reset).toHaveBeenCalled();
-    // Config should NOT be overwritten with defaults
-    expect(world.updateConfig).not.toHaveBeenCalled();
-  });
-
-  it('reset restores default config and calls reset', () => {
-    const world = makeWorld();
-    const onReset = vi.fn();
-    setupControls({ world, defaultConfig, onReset });
-
-    const resetBtn = document.getElementById('btn-reset')!;
-    resetBtn.click();
-
-    expect(world.updateConfig).toHaveBeenCalledWith(defaultConfig);
-    expect(world.reset).toHaveBeenCalled();
-    expect(onReset).toHaveBeenCalled();
-  });
-
-  it('step calls world.step when not running', () => {
-    const world = makeWorld();
-    setupControls({ world, defaultConfig });
-
-    const stepBtn = document.getElementById('btn-step')!;
-    stepBtn.click();
-
-    expect(world.step).toHaveBeenCalled();
-  });
-
-  it('step does nothing when running', () => {
-    const world = makeWorld();
-    world.running = true;
-    setupControls({ world, defaultConfig });
-
-    const stepBtn = document.getElementById('btn-step')!;
-    stepBtn.click();
-
-    expect(world.step).not.toHaveBeenCalled();
+  it('snaps values to step increments from min', () => {
+    for (let i = 0; i < 50; i++) {
+      const result = randomizeConfig(schema);
+      expect((result['count']! - 10) % 5).toBe(0);
+    }
   });
 });

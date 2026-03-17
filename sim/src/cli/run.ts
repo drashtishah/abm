@@ -2,6 +2,7 @@ import { writeFileSync, mkdirSync } from 'fs';
 import '../models/index.js';
 import { getModel } from '../framework/model-registry.js';
 import { parseArgs } from './args.js';
+import { evaluate } from './evaluate.js';
 
 const args = parseArgs(process.argv.slice(2));
 const modelDef = getModel(args.model);
@@ -58,5 +59,17 @@ if (args.batch > 0) {
   const world = modelDef.createWorld({ ...config });
   world.setup();
   for (let t = 0; t < args.ticks; t++) world.step();
-  writeCSV(world, args.output);
+
+  if (args.score) {
+    // Evaluate pattern fidelity and print JSON result
+    if (!modelDef.expectedPattern) {
+      console.error(`Model "${args.model}" has no expectedPattern defined`);
+      process.exit(1);
+      throw new Error('unreachable');
+    }
+    const result = evaluate(world.populationHistory, modelDef.expectedPattern);
+    console.log(JSON.stringify({ model: args.model, ticks: args.ticks, seed: args.seed, ...result }, null, 2));
+  } else {
+    writeCSV(world, args.output);
+  }
 }

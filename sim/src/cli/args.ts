@@ -7,6 +7,7 @@ export interface CliArgs {
   outputDir: string;
   seed: number | undefined;
   dumpDefinition: boolean;
+  score: boolean;
 }
 
 export function parseArgs(argv: string[]): CliArgs {
@@ -19,6 +20,7 @@ export function parseArgs(argv: string[]): CliArgs {
     outputDir: './runs',
     seed: undefined,
     dumpDefinition: false,
+    score: false,
   };
 
   for (let i = 0; i < argv.length; i++) {
@@ -55,6 +57,9 @@ export function parseArgs(argv: string[]): CliArgs {
         break;
       case '--dump-definition':
         args.dumpDefinition = true;
+        break;
+      case '--score':
+        args.score = true;
         break;
     }
   }

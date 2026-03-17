@@ -1,0 +1,98 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Simulator" [level=1] [ref=e4]
+    - generic [ref=e5]:
+      - generic [ref=e6]: "Tick: 0"
+      - combobox "Select simulation model" [ref=e7]:
+        - option "Wolf Sheep Predation" [selected]
+  - complementary [ref=e8]:
+    - generic [ref=e9]:
+      - generic [ref=e10]: Classic predator-prey model.
+      - generic [ref=e11]: "Agent rules:"
+      - list [ref=e12]:
+        - listitem [ref=e13]: • Wolves wander randomly. Catch nearby sheep → gain energy.
+        - listitem [ref=e14]: • Sheep flee wolves. Eat grass → gain energy.
+        - listitem [ref=e15]: • All agents lose energy each step. Zero energy → die.
+        - listitem [ref=e16]: • Enough energy → chance to reproduce.
+        - listitem [ref=e17]: • Grass regrows after a delay.
+      - generic [ref=e18]: "These simple rules produce emergent oscillations:"
+      - generic [ref=e19]: Sheep boom → wolves thrive → sheep crash → wolves starve → repeat.
+    - generic [ref=e20]:
+      - button "Setup" [ref=e21] [cursor=pointer]
+      - button "Go" [ref=e22] [cursor=pointer]
+      - button "Step" [ref=e23] [cursor=pointer]
+      - button "Reset" [ref=e24] [cursor=pointer]
+    - generic [ref=e25]: Speed
+    - generic [ref=e26]:
+      - generic [ref=e27]: Update Rate
+      - slider "Update Rate" [ref=e28]: "1"
+      - generic [ref=e29]: "1"
+    - generic [ref=e30]: Parameters
+    - generic [ref=e31]:
+      - generic [ref=e32]:
+        - generic [ref=e33]:
+          - text: Initial Sheep
+          - button "Info about Initial Sheep" [ref=e35] [cursor=pointer]: ℹ
+        - slider "Initial Sheep Info about Initial Sheep" [ref=e36]: "100"
+        - generic [ref=e37]: "100"
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - text: Initial Wolves
+          - button "Info about Initial Wolves" [ref=e41] [cursor=pointer]: ℹ
+        - slider "Initial Wolves Info about Initial Wolves" [ref=e42]: "50"
+        - generic [ref=e43]: "50"
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - text: Sheep Food Gain
+          - button "Info about Sheep Food Gain" [ref=e47] [cursor=pointer]: ℹ
+        - slider "Sheep Food Gain Info about Sheep Food Gain" [ref=e48]: "4"
+        - generic [ref=e49]: "4"
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - text: Wolf Food Gain
+          - button "Info about Wolf Food Gain" [ref=e53] [cursor=pointer]: ℹ
+        - slider "Wolf Food Gain Info about Wolf Food Gain" [ref=e54]: "20"
+        - generic [ref=e55]: "20"
+      - button "▸ Advanced" [ref=e56] [cursor=pointer]
+      - generic:
+        - generic [ref=e57]:
+          - generic [ref=e58]:
+            - text: Sheep Breed %
+            - button "Info about Sheep Breed %" [ref=e60] [cursor=pointer]: ℹ
+          - slider "Sheep Breed % Info about Sheep Breed %" [ref=e61]: "4"
+          - generic [ref=e62]: "4"
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - text: Wolf Breed %
+            - button "Info about Wolf Breed %" [ref=e66] [cursor=pointer]: ℹ
+          - slider "Wolf Breed % Info about Wolf Breed %" [ref=e67]: "5"
+          - generic [ref=e68]: "5"
+        - generic [ref=e69]:
+          - generic [ref=e70]:
+            - text: Grass Regrowth
+            - button "Info about Grass Regrowth" [ref=e72] [cursor=pointer]: ℹ
+          - slider "Grass Regrowth Info about Grass Regrowth" [ref=e73]: "30"
+          - generic [ref=e74]: "30"
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - text: Random Seed
+            - button "Info about Random Seed" [ref=e78] [cursor=pointer]: ℹ
+          - slider "Random Seed Info about Random Seed" [ref=e79]: "0"
+          - generic [ref=e80]: "0"
+    - generic [ref=e81]: Population
+    - generic [ref=e82]:
+      - generic [ref=e83]: "Wolves: 50"
+      - generic [ref=e84]: "Sheep: 100"
+      - generic [ref=e85]: "Grass: 1294"
+    - button "Download CSV" [disabled] [ref=e87]
+    - paragraph [ref=e89]:
+      - text: Based on
+      - link "NetLogo Wolf Sheep Predation" [ref=e90] [cursor=pointer]:
+        - /url: https://ccl.northwestern.edu/netlogo/models/WolfSheepPredation
+      - text: by Uri Wilensky (1997). Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.
+  - separator "Drag to resize sidebar" [ref=e91]: ⋮
+  - img "Simulation canvas showing agent positions" [ref=e93]
+```

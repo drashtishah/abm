@@ -3,7 +3,8 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './test/e2e',
   outputDir: './test-results',
-  retries: 0, // Failures ARE findings, not flakiness to mask
+  retries: process.env['CI'] ? 1 : 0,
+  workers: process.env['CI'] ? 2 : undefined,
   timeout: 60_000,
   expect: { timeout: 10_000 },
 

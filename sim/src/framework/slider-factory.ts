@@ -65,8 +65,12 @@ export function createSliders(
     container.appendChild(createSliderRow(field, world));
   }
 
-  // Toggles
-  if (model.toggles) {
+  // Toggles (with separator spacing)
+  if (model.toggles && model.toggles.length > 0) {
+    const separator = document.createElement('div');
+    separator.className = 'toggle-separator';
+    container.appendChild(separator);
+
     for (const tog of model.toggles) {
       const wrapper = document.createElement('div');
       wrapper.className = 'toggle-row';
@@ -79,6 +83,19 @@ export function createSliders(
       const label = document.createElement('label');
       label.textContent = tog.label;
       label.htmlFor = `toggle-${tog.key}`;
+
+      if (tog.info) {
+        label.classList.add('has-info');
+
+        const tooltip = document.createElement('span');
+        tooltip.className = 'info-tooltip';
+        tooltip.id = `tooltip-${tog.key}`;
+        tooltip.setAttribute('role', 'tooltip');
+        tooltip.textContent = tog.info;
+
+        label.setAttribute('aria-describedby', tooltip.id);
+        label.appendChild(tooltip);
+      }
 
       checkbox.addEventListener('change', () => {
         world.updateConfig({ [tog.key]: checkbox.checked ? 1 : 0 });

@@ -29,6 +29,7 @@ export interface ToggleField {
   key: string;
   label: string;
   default: boolean;
+  info?: string;
 }
 
 export interface ModelDefinition {
@@ -45,6 +46,9 @@ export interface ModelDefinition {
   expectedPattern?: ExpectedPattern;
   challengeText?: string;
   patternSvg?: string;
+  chartYLabel?: string;
+  /** Map grid cell colors to populationDisplay keys (high=bright, low=dim). */
+  patchColorKeys?: { high: string; low: string };
   createWorld(config: Record<string, number>): World;
 }
 

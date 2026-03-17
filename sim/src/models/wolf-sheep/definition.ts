@@ -9,15 +9,15 @@ export const wolfSheepDef: ModelDefinition = {
   context: `Classic predator-prey model.
 
 Agent rules:
-• Wolves wander randomly. Catch nearby sheep → gain energy.
-• Sheep flee wolves. Eat grass → gain energy.
-• All agents lose energy each step. Zero energy → die.
-• Enough energy → chance to reproduce.
-• Grass regrows after a delay.
+• Wolves (triangles) wander randomly. Catch a nearby sheep → gain energy.
+• Sheep (circles) flee wolves. Eat a grass patch → gain energy, patch switches to eaten.
+• All agents lose energy each step. Zero energy → agent disappears.
+• Enough energy → chance to reproduce (splits into two).
+• Eaten grass patches regrow after a delay, returning to lush.
 
 These simple rules produce emergent oscillations:
 
-Sheep boom → wolves thrive → sheep crash → wolves starve → repeat.`,
+Sheep multiply (circles fill the canvas) → wolves thrive (triangles multiply) → sheep crash (circles vanish) → wolves starve (triangles disappear) → grass recovers → repeat.`,
   credit: 'Based on <a href="https://ccl.northwestern.edu/netlogo/models/WolfSheepPredation" target="_blank">NetLogo Wolf Sheep Predation</a> by Uri Wilensky (1997). Center for Connected Learning and Computer-Based Modeling, Northwestern University, Evanston, IL.',
   defaultConfig: {
     width: 800,
@@ -64,6 +64,7 @@ Sheep boom → wolves thrive → sheep crash → wolves starve → repeat.`,
     maxExtinctionRate: 0.1,
   },
   challengeText: 'Can you find the right combination of parameters to generate this pattern?',
+  chartYLabel: 'Population',
   patternSvg: '<svg viewBox="0 0 200 45" style="width:100%;height:40px;display:block"><path d="M5,32 Q25,6 45,28 Q65,42 85,18 Q105,2 125,32 Q145,42 165,12 Q180,4 195,25" stroke="#affff7" fill="none" stroke-width="1.5" opacity="0.8"/><path d="M5,12 Q25,38 45,22 Q65,6 85,32 Q105,42 125,12 Q145,2 165,35 Q180,42 195,18" stroke="#ff2daa" fill="none" stroke-width="1.5" opacity="0.8"/></svg>',
   createWorld: (config: Record<string, number>) => new WolfSheepWorld(config),
 };

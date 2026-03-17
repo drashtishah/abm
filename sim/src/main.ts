@@ -9,7 +9,7 @@ import { createSliders } from './framework/slider-factory.js';
 import { exportCSV } from './framework/csv-export.js';
 import { renderContextHTML } from './framework/context-renderer.js';
 import './framework/themes/index.js';
-import { listThemes, applyTheme, getSavedThemeId, getThemedAgentColor } from './framework/themes/theme-registry.js';
+import { listThemes, applyTheme, getSavedThemeId, getThemedAgentColor, getTheme } from './framework/themes/theme-registry.js';
 
 let currentModel: ModelDefinition;
 let world: World;
@@ -62,11 +62,13 @@ function buildChartLegend(model: ModelDefinition): void {
   }
 }
 
-/** Replace hardcoded agent colors in patternSvg with themed palette colors. */
+/** Replace hardcoded colors in patternSvg with themed palette colors. */
 function themedPatternSvg(svg: string, model: ModelDefinition): string {
   let result = svg;
-  for (let i = 0; i < model.agentTypes.length; i++) {
-    const original = model.agentTypes[i]!.color;
+  // Replace populationDisplay colors (covers chart line colors in SVG)
+  const popEntries = getPopulationDisplay(model);
+  for (let i = 0; i < popEntries.length; i++) {
+    const original = popEntries[i]!.color;
     const themed = getThemedAgentColor(i, original);
     if (themed !== original) {
       result = result.split(original).join(themed);
@@ -94,7 +96,17 @@ function rebuildThemedColors(): void {
     }
   }
 
-  modelContext.innerHTML = renderContextHTML(currentModel.context, contextColorMap);
+  // Replace {color:N} placeholders with theme palette labels
+  let contextText = currentModel.context;
+  const theme = getTheme(getSavedThemeId());
+  if (theme?.paletteLabels) {
+    contextText = contextText.replace(/\{color:(\d+)\}/g, (_, idx) => {
+      const i = parseInt(idx, 10);
+      return theme.paletteLabels?.[i] ?? `color ${i}`;
+    });
+  }
+
+  modelContext.innerHTML = renderContextHTML(contextText, contextColorMap);
   if (currentModel.challengeText || currentModel.patternSvg) {
     let challengeHTML = '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">';
     if (currentModel.challengeText) {
@@ -114,9 +126,8 @@ const speedValue = document.getElementById('speed-value')!;
 const downloadBtn = document.getElementById('btn-download')!;
 const chartArea = document.querySelector('.chart-area') as HTMLElement;
 
-// Agent inspector
+// Agent inspector (close/escape handlers only)
 const inspectorEl = document.getElementById('agent-inspector')!;
-const inspectorContent = document.getElementById('inspector-content')!;
 const inspectorClose = document.getElementById('inspector-close')!;
 
 // Buffered canvas resize (Task 8: ResizeObserver race fix)
@@ -148,8 +159,6 @@ for (const m of models) {
 let lastRenderedTick = -1;
 let animationHandle = 0;
 
-// Event listener cleanup on model switch (Task 12)
-let modelAbortController = new AbortController();
 
 function loadModel(id: string): void {
   const def = getModel(id);
@@ -157,11 +166,6 @@ function loadModel(id: string): void {
 
   // Cancel pending animation frame during model switch
   cancelAnimationFrame(animationHandle);
-
-  // Abort previous model's listeners
-  modelAbortController.abort();
-  modelAbortController = new AbortController();
-  const signal = modelAbortController.signal;
 
   currentModel = def;
   world = def.createWorld({ ...def.defaultConfig });
@@ -200,71 +204,16 @@ function loadModel(id: string): void {
     },
   });
 
-  // Set canvas size
-  simCanvas.width = (world.config['width'] ?? 800);
-  simCanvas.height = (world.config['height'] ?? 600);
+  // Set canvas size to fill container (ResizeObserver keeps it updated)
+  const canvasRect = canvasArea.getBoundingClientRect();
+  simCanvas.width = Math.floor(canvasRect.width) || (world.config['width'] ?? 800);
+  simCanvas.height = Math.floor(canvasRect.height) || (world.config['height'] ?? 600);
 
-  // Agent inspector on canvas click (scoped to model lifetime)
-  simCanvas.addEventListener('click', (e) => {
-    const rect = simCanvas.getBoundingClientRect();
-    const scaleX = simCanvas.width / rect.width;
-    const scaleY = simCanvas.height / rect.height;
-    const mx = (e.clientX - rect.left) * scaleX;
-    const my = (e.clientY - rect.top) * scaleY;
+  // Agent inspector removed — canvas clicks have no action
 
-    // Find clicked agent
-    let closest = null;
-    let closestDist = Infinity;
-    for (const agent of world.agents) {
-      if (!agent.alive) continue;
-      const dx = agent.x - mx;
-      const dy = agent.y - my;
-      const d = Math.sqrt(dx * dx + dy * dy);
-      if (d < agent.radius * 2 && d < closestDist) {
-        closestDist = d;
-        closest = agent;
-      }
-    }
-
-    if (closest) {
-      inspectorContent.textContent = '';
-
-      const title = document.createElement('strong');
-      title.textContent = `${closest.type} #${closest.id}`;
-      inspectorContent.appendChild(title);
-
-      const details = [
-        `x: ${closest.x.toFixed(1)}, y: ${closest.y.toFixed(1)}`,
-        `energy: ${closest.energy.toFixed(1)}`,
-        `speed: ${closest.speed}`,
-        `alive: ${closest.alive}`,
-      ];
-      for (const line of details) {
-        inspectorContent.appendChild(document.createElement('br'));
-        inspectorContent.appendChild(document.createTextNode(line));
-      }
-
-      inspectorEl.style.display = 'block';
-
-      // Clamp to viewport bounds
-      const inspectorRect = inspectorEl.getBoundingClientRect();
-      let left = e.clientX + 10;
-      let top = e.clientY + 10;
-      if (left + inspectorRect.width > window.innerWidth) {
-        left = window.innerWidth - inspectorRect.width - 10;
-      }
-      if (top + inspectorRect.height > window.innerHeight) {
-        top = window.innerHeight - inspectorRect.height - 10;
-      }
-      inspectorEl.style.left = `${left}px`;
-      inspectorEl.style.top = `${top}px`;
-    } else {
-      inspectorEl.style.display = 'none';
-    }
-  }, { signal });
-
-  // Initial render
+  // Initial render + restart animation loop (cancelAnimationFrame above killed it)
   render(simCtx, world, currentModel);
+  animationHandle = requestAnimationFrame(loop);
 }
 
 modelSelect.addEventListener('change', () => {
@@ -581,5 +530,3 @@ function loop(): void {
 
   animationHandle = requestAnimationFrame(loop);
 }
-
-animationHandle = requestAnimationFrame(loop);

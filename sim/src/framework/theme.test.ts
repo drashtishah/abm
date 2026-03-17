@@ -10,7 +10,7 @@ describe('theme', () => {
   it('returns fallback colors in jsdom (no CSS vars)', () => {
     const colors = getThemeColors();
     expect(colors.bgPrimary).toBe('#0a0e27');
-    expect(colors.grassAlive).toBe('#2a5a20');
+    expect(colors.gridHigh).toBe('#2a5a20');
   });
 
   it('caches results on second call', () => {

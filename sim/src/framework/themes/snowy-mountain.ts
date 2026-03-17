@@ -13,9 +13,10 @@ registerTheme({
     accentTertiary: '#1E5064',  // arctic deep — frozen abyss
     textPrimary: '#1A2E3B',     // midnight frost — 12:1 on snow (AAA)
     textSecondary: '#5A7488',   // slate ice — 4.5:1 on snow (AA)
-    colorGrass: '#7BAFC4',      // frozen tundra blue-green
-    colorGrassEaten: '#DDE8EF', // wind-swept snowpack
+    colorGridHigh: '#7BAFC4',   // frozen tundra blue-green
+    colorGridLow: '#DDE8EF',   // wind-swept snowpack
     colorDanger: '#A83040',     // frostbite red — cold, not warm
   },
-  agentPalette: ['#1E5064', '#F2A65A', '#5A9BB0'],
+  agentPalette: ['#F2A65A', '#1E5064', '#5A9BB0'],
+  paletteLabels: ['orange', 'dark blue', 'blue'],
 });

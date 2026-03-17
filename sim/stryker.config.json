@@ -1,0 +1,15 @@
+{
+  "$schema": "https://raw.githubusercontent.com/stryker-mutator/stryker/master/packages/core/schema/stryker-core.json",
+  "mutate": [
+    "src/models/**/behaviors.ts",
+    "src/framework/base-world.ts",
+    "src/utils/**/*.ts",
+    "!src/**/*.test.ts"
+  ],
+  "testRunner": "vitest",
+  "checkers": ["typescript"],
+  "reporters": ["clear-text", "html"],
+  "htmlReporter": { "fileName": "reports/mutation/index.html" },
+  "timeoutMS": 30000,
+  "concurrency": 4
+}

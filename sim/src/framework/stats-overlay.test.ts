@@ -141,6 +141,71 @@ describe('stats-overlay', () => {
     expect(strokeCalls).toContain('#affff7');
   });
 
+  it('chart uses populationDisplay colors when keys differ from agentTypes', () => {
+    // Muscle model pattern: agentType is 'fiber' but population keys are 'muscleMass', etc.
+    const muscleModel: ModelDefinition = {
+      ...model,
+      agentTypes: [
+        { type: 'fiber', color: '#cc0000', radius: 4, shape: 'circle' },
+      ],
+      populationDisplay: [
+        { key: 'muscleMass', label: 'Muscle Mass', color: '#ff4444' },
+        { key: 'avgAnabolic', label: 'Avg Anabolic', color: '#44cc44' },
+        { key: 'avgCatabolic', label: 'Avg Catabolic', color: '#cccc44' },
+      ],
+    };
+
+    const strokeCalls: string[] = [];
+    const ctx = makeCtx();
+    Object.defineProperty(ctx, 'strokeStyle', {
+      set(v: string) { strokeCalls.push(v); },
+      get() { return strokeCalls[strokeCalls.length - 1] ?? ''; },
+      configurable: true,
+    });
+
+    const history = Array.from({ length: 10 }, () => ({
+      muscleMass: 5000,
+      avgAnabolic: 100,
+      avgCatabolic: 80,
+    }));
+    const world = makeWorld({ populationHistory: history });
+    renderChart(ctx, world, muscleModel);
+
+    // All three population lines should be drawn with their populationDisplay colors
+    expect(strokeCalls).toContain('#ff4444');
+    expect(strokeCalls).toContain('#44cc44');
+    expect(strokeCalls).toContain('#cccc44');
+  });
+
+  it('stats overlay uses populationDisplay colors for non-agent-type keys', () => {
+    const muscleModel: ModelDefinition = {
+      ...model,
+      agentTypes: [
+        { type: 'fiber', color: '#cc0000', radius: 4, shape: 'circle' },
+      ],
+      populationDisplay: [
+        { key: 'muscleMass', label: 'Muscle Mass', color: '#ff4444' },
+      ],
+    };
+
+    const fillCalls: string[] = [];
+    const ctx = makeCtx();
+    Object.defineProperty(ctx, 'fillStyle', {
+      set(v: string) { fillCalls.push(v); },
+      get() { return fillCalls[fillCalls.length - 1] ?? ''; },
+      configurable: true,
+    });
+
+    const world = makeWorld({
+      getPopulationCounts: vi.fn(() => ({ muscleMass: 5000 })),
+    });
+    renderStats(ctx, world, muscleModel);
+
+    // Should use populationDisplay color (#ff4444), not agent type color (#cc0000)
+    expect(fillCalls).toContain('#ff4444');
+    expect(fillCalls).not.toContain('#cc0000');
+  });
+
   it('chart falls back to agentTypes when populationDisplay is undefined', () => {
     const strokeCalls: string[] = [];
     const ctx = makeCtx();

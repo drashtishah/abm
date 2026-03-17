@@ -14,8 +14,8 @@ const testTheme: ThemeDefinition = {
     accentTertiary: '#f0f',
     textPrimary: '#fff',
     textSecondary: '#aaa',
-    colorGrass: '#0a0',
-    colorGrassEaten: '#010',
+    colorGridHigh: '#0a0',
+    colorGridLow: '#010',
     colorDanger: '#f00',
   },
 };
@@ -45,7 +45,7 @@ describe('theme-registry', () => {
     expect(cozy).toBeDefined();
     expect(cozy!.name).toBe('Cozy');
     expect(cozy!.colors.bgPrimary).toBe('#FAF6F0');
-    expect(cozy!.colors.colorGrass).toBe('#A3B898');
+    expect(cozy!.colors.colorGridHigh).toBe('#A3B898');
     expect(cozy!.agentPalette).toHaveLength(3);
   });
 });

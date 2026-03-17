@@ -9,10 +9,11 @@ export function renderStats(
   world: World,
   model: ModelDefinition
 ): void {
+  const popEntries = getPopulationDisplay(model);
   const colors: Record<string, string> = {};
-  for (let i = 0; i < model.agentTypes.length; i++) {
-    const at = model.agentTypes[i]!;
-    colors[at.type] = getThemedAgentColor(i, at.color);
+  for (let i = 0; i < popEntries.length; i++) {
+    const entry = popEntries[i]!;
+    colors[entry.key] = getThemedAgentColor(i, entry.color);
   }
 
   // Draw population counts top-left
@@ -108,11 +109,12 @@ export function renderChart(
     ctx.fillText(String(t), xPos - 10, h - 5);
   }
 
-  // Color map — population keys must match agent type names exactly
+  // Color map — use populationDisplay entries to match chart keys
+  const popEntries = getPopulationDisplay(model);
   const lineColors: Record<string, string> = {};
-  for (let i = 0; i < model.agentTypes.length; i++) {
-    const at = model.agentTypes[i]!;
-    lineColors[at.type] = getThemedAgentColor(i, at.color);
+  for (let i = 0; i < popEntries.length; i++) {
+    const entry = popEntries[i]!;
+    lineColors[entry.key] = getThemedAgentColor(i, entry.color);
   }
   // Draw lines
   for (const key of keys) {

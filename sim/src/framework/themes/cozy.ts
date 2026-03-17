@@ -13,9 +13,10 @@ registerTheme({
     accentTertiary: '#B8976E',  // honey/caramel — wool & wood warmth
     textPrimary: '#4A3F35',     // espresso — 8.5:1 on cream (WCAG AAA)
     textSecondary: '#7A6E62',   // warm taupe — 4.1:1 on cream (WCAG AA)
-    colorGrass: '#A3B898',      // soft sage for canvas grid
-    colorGrassEaten: '#E8E0D5', // warm beige — barren earth
+    colorGridHigh: '#A3B898',   // soft sage for canvas grid
+    colorGridLow: '#E8E0D5',   // warm beige — barren earth
     colorDanger: '#C47A6E',     // muted terracotta red — warm, not harsh
   },
   agentPalette: ['#7D6552', '#DEB5A6', '#8BAA82'],
+  paletteLabels: ['brown', 'pink', 'green'],
 });

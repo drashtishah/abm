@@ -13,8 +13,10 @@ registerTheme({
     accentTertiary: '#9b80f2',
     textPrimary: '#affff7',
     textSecondary: '#7da4bc',
-    colorGrass: '#4a9e3a',
-    colorGrassEaten: '#0a0a0a',
+    colorGridHigh: '#4a9e3a',
+    colorGridLow: '#0a0a0a',
     colorDanger: '#ff1744',
   },
+  agentPalette: ['#ff2daa', '#00ffe5', '#66ff55'],
+  paletteLabels: ['pink', 'cyan', 'green'],
 });

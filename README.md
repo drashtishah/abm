@@ -1,27 +1,11 @@
-# Simulator
+# Pattern Hunter
 
-Agent-based model simulator. Simple micro-rules produce emergent macro-patterns.
+**[Play now](https://drashtishah.github.io/abm/)**
+
+Simple games inspired by agent-based models. Each simulation starts with a handful of micro-rules — wolves hunt, sheep graze, grass regrows — and your goal is to tune the parameters until emergent patterns appear. Can you find the combination that produces steady predator-prey oscillations instead of extinction?
 
 ## Models
 
-| Model | Description | Live |
-|-------|-------------|------|
-| Wolf Sheep Predation | Predator-prey dynamics with grass — wolves hunt, sheep flee and graze, populations oscillate | [Run it](https://drashtishah.github.io/abm/) |
-
-## Run locally
-
-```bash
-cd sim
-npm install
-npm run dev
-```
-
-Open `http://localhost:5173`
-
-## Tests
-
-```bash
-cd sim
-npm test          # unit + integration + stress
-npm run test:e2e  # Playwright browser tests
-```
+| Model | What happens |
+|-------|-------------|
+| Wolf Sheep Predation | Predator-prey dynamics with grass — tweak food gain, breed rates, and regrowth to hunt for Lotka-Volterra cycles |

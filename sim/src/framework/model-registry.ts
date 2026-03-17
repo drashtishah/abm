@@ -43,6 +43,8 @@ export interface ModelDefinition {
   populationDisplay?: PopulationDisplayEntry[];
   toggles?: ToggleField[];
   expectedPattern?: ExpectedPattern;
+  challengeText?: string;
+  patternSvg?: string;
   createWorld(config: Record<string, number>): World;
 }
 

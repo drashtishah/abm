@@ -135,6 +135,20 @@ function loadModel(id: string): void {
 
   // Update UI
   modelContext.innerHTML = renderContextHTML(def.context, contextColorMap);
+
+  // Append challenge text and expected pattern SVG if model defines them
+  if (def.challengeText || def.patternSvg) {
+    let challengeHTML = '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">';
+    if (def.challengeText) {
+      challengeHTML += `<div style="color:var(--accent-tertiary);font-size:10px;margin-bottom:4px">${def.challengeText}</div>`;
+    }
+    if (def.patternSvg) {
+      challengeHTML += def.patternSvg;
+    }
+    challengeHTML += '</div>';
+    modelContext.innerHTML += challengeHTML;
+  }
+
   attribution.innerHTML = def.credit
     ? `<p>${def.credit}</p>`
     : '';

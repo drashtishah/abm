@@ -49,6 +49,11 @@ Sheep boom → wolves thrive → sheep crash → wolves starve → repeat.`,
     { type: 'wolf', color: '#ff2daa', radius: 6, shape: 'triangle' },
     { type: 'sheep', color: '#affff7', radius: 5, shape: 'circle' },
   ],
+  populationDisplay: [
+    { key: 'wolf', label: 'Wolves', color: '#ff2daa' },
+    { key: 'sheep', label: 'Sheep', color: '#affff7' },
+    { key: 'grass', label: 'Grass', color: '#66ff55', showInChart: false },
+  ],
   toggles: [],
   expectedPattern: {
     type: 'oscillation',

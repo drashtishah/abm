@@ -1,6 +1,6 @@
 import './models/index.js';
-import { listModels, getModel } from './framework/model-registry.js';
-import type { ModelDefinition } from './framework/model-registry.js';
+import { listModels, getModel, getPopulationDisplay } from './framework/model-registry.js';
+import type { ModelDefinition, PopulationDisplayEntry } from './framework/model-registry.js';
 import type { World } from './framework/types.js';
 import { render } from './framework/canvas-renderer.js';
 import { renderChart } from './framework/stats-overlay.js';
@@ -19,10 +19,39 @@ const chartCtx = chartCanvas.getContext('2d')!;
 const modelSelect = document.getElementById('model-select') as HTMLSelectElement;
 const sliderContainer = document.getElementById('slider-container')!;
 const tickDisplay = document.getElementById('tick-display')!;
-const popWolves = document.getElementById('pop-wolves')!;
-const popSheep = document.getElementById('pop-sheep')!;
-const popGrass = document.getElementById('pop-grass')!;
+const popContainer = document.getElementById('pop-counts')!;
+const chartLegend = document.getElementById('chart-legend')!;
 const modelContext = document.getElementById('model-context')!;
+
+// Dynamic population display — populated on model load from populationDisplay config
+let popElements = new Map<string, HTMLElement>();
+let popDisplayEntries: PopulationDisplayEntry[] = [];
+
+function buildPopulationDisplay(model: ModelDefinition): void {
+  popContainer.textContent = '';
+  popElements = new Map();
+  popDisplayEntries = getPopulationDisplay(model);
+  for (const entry of popDisplayEntries) {
+    const span = document.createElement('span');
+    span.style.color = entry.color;
+    span.setAttribute('data-pop-key', entry.key);
+    span.textContent = `${entry.label}: 0`;
+    popContainer.appendChild(span);
+    popElements.set(entry.key, span);
+  }
+}
+
+function buildChartLegend(model: ModelDefinition): void {
+  chartLegend.textContent = '';
+  const entries = getPopulationDisplay(model).filter(e => e.showInChart !== false);
+  for (const entry of entries) {
+    const span = document.createElement('span');
+    span.className = 'legend-item';
+    span.style.color = entry.color;
+    span.textContent = `\u25A0 ${entry.label}`;
+    chartLegend.appendChild(span);
+  }
+}
 const attribution = document.getElementById('attribution')!;
 const speedSlider = document.getElementById('speed-slider') as HTMLInputElement;
 const speedValue = document.getElementById('speed-value')!;
@@ -89,8 +118,21 @@ function loadModel(id: string): void {
   chartArea.classList.remove('has-data');
   downloadBtn.setAttribute('disabled', '');
 
+  // Build dynamic population display and chart legend from model definition
+  buildPopulationDisplay(def);
+  buildChartLegend(def);
+
+  // Build color map for context bullet coloring from populationDisplay + agentTypes
+  const contextColorMap = new Map<string, string>();
+  for (const entry of getPopulationDisplay(def)) {
+    contextColorMap.set(entry.key, entry.color);
+  }
+  for (const at of def.agentTypes) {
+    if (!contextColorMap.has(at.type)) contextColorMap.set(at.type, at.color);
+  }
+
   // Update UI
-  modelContext.innerHTML = renderContextHTML(def.context);
+  modelContext.innerHTML = renderContextHTML(def.context, contextColorMap);
   attribution.innerHTML = def.credit
     ? `<p>${def.credit}</p>`
     : '';
@@ -348,9 +390,10 @@ function loop(): void {
   if (world.tick !== lastRenderedTick) {
     const counts = world.getPopulationCounts();
     tickDisplay.textContent = `Tick: ${world.tick}`;
-    popWolves.textContent = `Wolves: ${counts['wolf'] ?? 0}`;
-    popSheep.textContent = `Sheep: ${counts['sheep'] ?? 0}`;
-    popGrass.textContent = `Grass: ${counts['grass'] ?? 0}`;
+    for (const entry of popDisplayEntries) {
+      const el = popElements.get(entry.key);
+      if (el) el.textContent = `${entry.label}: ${counts[entry.key] ?? 0}`;
+    }
 
     lastRenderedTick = world.tick;
 

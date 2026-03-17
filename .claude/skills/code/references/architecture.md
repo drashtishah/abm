@@ -107,7 +107,7 @@ main.ts
         ├── render(ctx, world, model) ← draws grass + agents to canvas
         ├── renderStats(ctx, world, model)
         ├── renderChart(chartCtx, world, model)
-        └── update DOM counters      ← #tick-display, #pop-wolves, etc.
+        └── update DOM counters      ← #tick-display, [data-pop-key] spans
 ```
 
 ## Key Interfaces

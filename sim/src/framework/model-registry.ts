@@ -18,6 +18,13 @@ export interface AgentTypeDefinition {
   shape: 'circle' | 'triangle' | 'square';
 }
 
+export interface PopulationDisplayEntry {
+  key: string;
+  label: string;
+  color: string;
+  showInChart?: boolean;
+}
+
 export interface ToggleField {
   key: string;
   label: string;
@@ -33,6 +40,7 @@ export interface ModelDefinition {
   defaultConfig: Record<string, number>;
   configSchema: ConfigField[];
   agentTypes: AgentTypeDefinition[];
+  populationDisplay?: PopulationDisplayEntry[];
   toggles?: ToggleField[];
   expectedPattern?: ExpectedPattern;
   createWorld(config: Record<string, number>): World;
@@ -50,4 +58,10 @@ export function getModel(id: string): ModelDefinition | undefined {
 
 export function listModels(): ModelDefinition[] {
   return Array.from(models.values());
+}
+
+// Returns populationDisplay entries, falling back to agentTypes if not defined.
+export function getPopulationDisplay(model: ModelDefinition): PopulationDisplayEntry[] {
+  if (model.populationDisplay) return model.populationDisplay;
+  return model.agentTypes.map(at => ({ key: at.type, label: at.type, color: at.color }));
 }

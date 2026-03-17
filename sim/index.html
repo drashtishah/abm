@@ -14,8 +14,6 @@
       --accent-tertiary: #9b80f2;
       --text-primary: #affff7;
       --text-secondary: #7da4bc;
-      --color-wolf: #ff2daa;
-      --color-sheep: #affff7;
       --color-grass: #4a9e3a;
       --color-grass-eaten: #0a0a0a;
       --color-danger: #ff1744;
@@ -159,11 +157,8 @@
       content: '•';
       position: absolute;
       left: 0;
+      color: var(--bullet-color, inherit);
     }
-
-    .model-context li.rule-wolf::before { color: var(--color-wolf); }
-    .model-context li.rule-sheep::before { color: var(--color-sheep); }
-    .model-context li.rule-grass::before { color: var(--color-grass); }
 
     .model-context .context-summary {
       font-size: 10px;
@@ -338,9 +333,7 @@
       font-size: 12px;
     }
 
-    .pop-wolf { color: var(--color-wolf); }
-    .pop-sheep { color: var(--color-sheep); }
-    .pop-grass { color: var(--accent-primary); }
+    /* Population item colors are set dynamically via inline styles */
 
 
     .canvas-area {
@@ -518,11 +511,7 @@
       <div id="slider-container"></div>
 
       <div class="section-label">Population</div>
-      <div class="population-counts" id="pop-counts">
-        <span class="pop-wolf" id="pop-wolves">Wolves: 0</span>
-        <span class="pop-sheep" id="pop-sheep">Sheep: 0</span>
-        <span class="pop-grass" id="pop-grass">Grass: 0</span>
-      </div>
+      <div class="population-counts" id="pop-counts"></div>
       <div id="pop-status" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 
       <button id="btn-download" disabled>Download CSV</button>
@@ -539,10 +528,7 @@
     </div>
 
     <div class="chart-area">
-      <div class="chart-legend" id="chart-legend" aria-label="Chart legend">
-        <span class="legend-item" style="color: var(--color-wolf);">&#9632; Wolves</span>
-        <span class="legend-item" style="color: var(--color-sheep);">&#9632; Sheep</span>
-      </div>
+      <div class="chart-legend" id="chart-legend" aria-label="Chart legend"></div>
       <canvas id="chart-canvas" role="img" aria-label="Population chart"></canvas>
     </div>
   </div>

@@ -75,9 +75,9 @@ test.describe('smoke tests', () => {
   });
 
   test('population counters are visible', async ({ page }) => {
-    await expect(page.locator('#pop-wolves')).toBeVisible();
-    await expect(page.locator('#pop-sheep')).toBeVisible();
-    await expect(page.locator('#pop-grass')).toBeVisible();
+    await expect(page.locator('[data-pop-key="wolf"]')).toBeVisible();
+    await expect(page.locator('[data-pop-key="sheep"]')).toBeVisible();
+    await expect(page.locator('[data-pop-key="grass"]')).toBeVisible();
   });
 
   test('model selector has options', async ({ page }) => {

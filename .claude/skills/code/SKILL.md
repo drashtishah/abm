@@ -168,7 +168,7 @@ Testing pyramid (proven approach from initial build — 63 tests across 5 levels
 
 - All interactive elements must have `data-*` attributes for programmatic access
 - Parameter names in the DOM must match code variable names (e.g., `data-param="wolfSpeed"`)
-- Simulation state should be readable from the DOM (`#tick-display`, `#pop-wolves`, `#pop-sheep`, `#pop-grass`)
+- Simulation state should be readable from the DOM (`#tick-display`, `[data-pop-key="{type}"]`)
 - HTML must be semantic (proper headings, `<label>` elements, ARIA where needed)
 - The Web Fetch tool or Playwright MCP can verify the live app at `localhost:5173`
 - See `references/agent-readable-output.md` for the full specification

@@ -60,7 +60,7 @@ function createSliderRow(
       const rect = icon.getBoundingClientRect();
       const tooltipW = 250; // max-width from CSS
       let left = rect.left;
-      let top = rect.top - 8;
+      const top = rect.top - 8;
 
       // Clamp horizontally
       if (left + tooltipW > window.innerWidth - 8) {

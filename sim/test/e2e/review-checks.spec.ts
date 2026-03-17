@@ -391,8 +391,8 @@ test.describe('Simulation Visual Checks', () => {
     await clickButton(page, 'btn-setup');
     await page.waitForTimeout(200);
     // Read DOM population counts
-    const wolvesText = await page.textContent('#pop-wolves');
-    const sheepText = await page.textContent('#pop-sheep');
+    const wolvesText = await page.textContent('[data-pop-key="wolf"]');
+    const sheepText = await page.textContent('[data-pop-key="sheep"]');
     const wolfCount = parseInt(wolvesText?.match(/\d+/)?.[0] ?? '0', 10);
     const sheepCount = parseInt(sheepText?.match(/\d+/)?.[0] ?? '0', 10);
     // Both should be > 0 after setup

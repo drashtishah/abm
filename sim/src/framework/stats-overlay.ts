@@ -1,5 +1,6 @@
 import type { World } from './types.js';
 import type { ModelDefinition } from './model-registry.js';
+import { getPopulationDisplay } from './model-registry.js';
 import { getThemeColors } from './theme.js';
 
 export function renderStats(
@@ -50,10 +51,15 @@ export function renderChart(
   const startIdx = Math.max(0, history.length - windowSize);
   const visible = history.slice(startIdx);
 
-  // Get chart keys from first entry (exclude grass — its scale dwarfs agents)
+  // Chart keys: only show populations marked for charting in populationDisplay
   const firstEntry = visible[0];
   if (!firstEntry) return;
-  const keys = Object.keys(firstEntry).filter(k => k !== 'grass');
+  const chartKeys = new Set(
+    getPopulationDisplay(model)
+      .filter(p => p.showInChart !== false)
+      .map(p => p.key)
+  );
+  const keys = Object.keys(firstEntry).filter(k => chartKeys.has(k));
 
   // Find max value for Y scaling
   let maxVal = 0;

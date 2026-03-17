@@ -41,9 +41,7 @@ These IDs are part of the public contract and must not be renamed without updati
 | Simulation canvas | `#sim-canvas` | `<canvas>` element |
 | Chart canvas | `#chart-canvas` | `<canvas>` element |
 | Tick counter | `#tick-display` | `"Tick: {number}"` |
-| Wolf count | `#pop-wolves` | `"Wolves: {number}"` |
-| Sheep count | `#pop-sheep` | `"Sheep: {number}"` |
-| Grass count | `#pop-grass` | `"Grass: {number}"` |
+| Population counts | `[data-pop-key="{type}"]` | `"{Label}: {number}"` — dynamic per model |
 | Model selector | `#model-select` | `<select>` with `<option value="{id}">` |
 | Model description | `#model-context` | `<pre>` with multi-line text |
 | Speed slider | `#speed-slider` | `<input type="range">` |
@@ -76,9 +74,9 @@ An AI agent or test can read the current state without accessing JavaScript inte
 // Read tick count
 const tick = parseInt(document.getElementById('tick-display').textContent.replace('Tick: ', ''));
 
-// Read population counts
-const wolves = parseInt(document.getElementById('pop-wolves').textContent.replace('Wolves: ', ''));
-const sheep = parseInt(document.getElementById('pop-sheep').textContent.replace('Sheep: ', ''));
+// Read population counts (dynamic per model via data-pop-key attribute)
+const wolves = parseInt(document.querySelector('[data-pop-key="wolf"]').textContent.match(/\d+/)?.[0]);
+const sheep = parseInt(document.querySelector('[data-pop-key="sheep"]').textContent.match(/\d+/)?.[0]);
 
 // Read a config value from a slider
 const wolfSpeed = parseFloat(document.querySelector('[data-param="wolfSpeed"]').value);

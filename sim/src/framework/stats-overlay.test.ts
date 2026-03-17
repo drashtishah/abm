@@ -109,4 +109,57 @@ describe('stats-overlay', () => {
     // Wolf line should use pink (#ff2daa) — "wolves".includes("wolf") matches
     expect(strokeCalls).toContain('#ff2daa');
   });
+
+  it('chart excludes populations with showInChart: false', () => {
+    const modelWithDisplay: ModelDefinition = {
+      ...model,
+      populationDisplay: [
+        { key: 'wolf', label: 'Wolves', color: '#ff2daa' },
+        { key: 'sheep', label: 'Sheep', color: '#affff7' },
+        { key: 'grass', label: 'Grass', color: '#66ff55', showInChart: false },
+      ],
+    };
+
+    const strokeCalls: string[] = [];
+    const ctx = makeCtx();
+    Object.defineProperty(ctx, 'strokeStyle', {
+      set(v: string) { strokeCalls.push(v); },
+      get() { return strokeCalls[strokeCalls.length - 1] ?? ''; },
+      configurable: true,
+    });
+
+    const history = Array.from({ length: 10 }, () => ({
+      wolf: 30,
+      sheep: 100,
+      grass: 200,
+    }));
+    const world = makeWorld({ populationHistory: history });
+    renderChart(ctx, world, modelWithDisplay);
+
+    // Wolf and sheep should be drawn, grass should not
+    expect(strokeCalls).toContain('#ff2daa');
+    expect(strokeCalls).toContain('#affff7');
+  });
+
+  it('chart falls back to agentTypes when populationDisplay is undefined', () => {
+    const strokeCalls: string[] = [];
+    const ctx = makeCtx();
+    Object.defineProperty(ctx, 'strokeStyle', {
+      set(v: string) { strokeCalls.push(v); },
+      get() { return strokeCalls[strokeCalls.length - 1] ?? ''; },
+      configurable: true,
+    });
+
+    const history = Array.from({ length: 10 }, () => ({
+      wolf: 30,
+      sheep: 100,
+      grass: 200,
+    }));
+    const world = makeWorld({ populationHistory: history });
+    renderChart(ctx, world, model); // model has no populationDisplay
+
+    // Should chart wolf and sheep (from agentTypes), not grass
+    expect(strokeCalls).toContain('#ff2daa');
+    expect(strokeCalls).toContain('#affff7');
+  });
 });
